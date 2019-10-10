@@ -1,0 +1,16 @@
+# Ignore everything
+*
+
+# But not these files...
+!.gitignore
+!Y - Codes/*.R
+!Y - Codes/*/*.R
+!*.R
+
+# ...even if they are in subdirectories
+!*/
+!*/*/
+!*/*/*/
+
+
+.Rproj.user
