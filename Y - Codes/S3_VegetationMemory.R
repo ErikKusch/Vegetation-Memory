@@ -146,9 +146,9 @@ VegMem <- function(ClimVar, ClimVar2, Region, Cumlags, FromY, ToY){
       Mods_ls[[counter+1]] <- Mod # save model to list of models
       counter <- counter + 1 }
     ### Selecting best model -----
-    # AICs <- sapply(X = Mods_ls, FUN = AIC) # calculate AICs for each model
+    AICs <- sapply(X = Mods_ls, FUN = AIC) # calculate AICs for each model
     # Best <- which(abs(AICs) == min(abs(AICs), na.rm = TRUE))[1] # best model, if same value present use first
-    Best <- which(abs(coeffsC) == max(abs(coeffsC))) # select fro strongest soil memory effect
+    Best <- which(abs(coeffsC) == max(abs(coeffsC)))[1] # select fro strongest soil memory effect
     c_NDVI <- coeffst1[Best] # ndvi coefficient
     c_Clim <- coeffsC[Best] # climate coefficient
     c_Clim2 <- coeffsC2[Best] # climate 2 coefficient
