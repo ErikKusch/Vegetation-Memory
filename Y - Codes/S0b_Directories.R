@@ -18,13 +18,16 @@ if(!dir.exists(Dir.ERA.Monthly)){dir.create(Dir.ERA.Monthly)}
 Dir.KrigCov <- paste(Dir.Data, "/3 - Kriging", sep="")
 # WORKING DIRECTORY FOR MEMORY EFFECT DATA
 Dir.Memory <- paste(Dir.Data, "/4 - Memory_Effects", sep="")
+if(!dir.exists(Dir.Memory)){dir.create(Dir.Memory)}
 # WORKING DIRECTORY FOR COMPADRE DATA
 Dir.Compadre <- paste(Dir.Data, "/5 - COMPADRE", sep="")
 # WORKING DIRECTORY FOR TRY PFT DATA
-if(!dir.exists(Dir.Memory)){dir.create(Dir.Memory)}
 Dir.TRY <- paste(Dir.Data, "/5 - TRY", sep="")
 # WORKING DIRECTORY FOR OCCURENCE DATA
 Dir.OCCs <- paste(Dir.Data, "/6 - Occurences", sep="")
 if(!dir.exists(Dir.OCCs)){dir.create(Dir.OCCs)}
 # WORKING DIRECTORY FOR SHAPEFILES (contains masking file for water bodies)
 Dir.Mask <- paste(Dir.Data, "/7 - ShapeFiles", sep="")
+# WORKING DIRECTORY FOR PLOTS
+Dir.Plots <- paste(mainDir, "/Z - Plots", sep="")
+if(!dir.exists(Dir.Plots)){dir.create(Dir.Plots)}
