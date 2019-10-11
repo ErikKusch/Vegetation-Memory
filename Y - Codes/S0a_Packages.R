@@ -4,5 +4,5 @@ install.load.package <- function(x) {
   require(x, character.only = TRUE)
 }
 package_vec <- c("automap", "doParallel", "foreach", "gameofthrones", "ggplot2", "gimms", 
-                 "gridExtra", "ndcf4", "pracma", "raster", "rgbif", "rgdal", "sp", "vegan", "xlsx", "RStoolbox", "forcats", "grid")
+                 "gridExtra", "ndcf4", "pracma", "raster", "rgbif", "rgdal", "sp", "vegan", "xlsx", "RStoolbox", "forcats", "grid", "rasterVis", "cowplot")
 sapply(package_vec, install.load.package)
