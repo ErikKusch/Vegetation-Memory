@@ -168,10 +168,13 @@ Fun_Plot <- function(Region, SoilLayer){
     }
     
     States <- c(Equilibrium, plot_ras[[3]][i], 
-                Equilibrium)
+                Equilibrium,Equilibrium,Equilibrium,Equilibrium)
     Times <- c(2,2+plot_ras[[1]][i], 
-               2+plot_ras[[1]][i]+abs(plot_ras[[3]][i]*plot_ras[[2]][i]/InverseProx))
-    Response <- rep(Identifier, 3)
+               2+plot_ras[[1]][i]+abs(plot_ras[[3]][i]*plot_ras[[2]][i]/InverseProx),
+               3+plot_ras[[1]][i]+abs(plot_ras[[3]][i]*plot_ras[[2]][i]/InverseProx),
+               4+plot_ras[[1]][i]+abs(plot_ras[[3]][i]*plot_ras[[2]][i]/InverseProx),
+               5+plot_ras[[1]][i]+abs(plot_ras[[3]][i]*plot_ras[[2]][i]/InverseProx))
+    Response <- rep(Identifier, 6)
     
     plot_df <- rbind(plot_df, 
                      data.frame(State = States, Time = Times, Response = Response))
@@ -185,12 +188,15 @@ Fun_Plot <- function(Region, SoilLayer){
   ## Plotting, these one needs adding of vertical lines and text!!!
   # dynamics
   Lines_gg <- ggplot(plot_df, aes(x = Time, y = State, col = Response)) + 
-    geom_line(data = plot_df[which(plot_df$Response == "Equilibrium"),]) + 
-    stat_smooth(level = 0.95, fullrange = FALSE, data = plot_df[which(plot_df$Response != "Equilibrium"),]) + 
+      geom_line(data = plot_df[which(plot_df$Response == "Equilibrium"),]) +  
+    stat_smooth(se=FALSE, fullrange = FALSE, data = plot_df[which(plot_df$Response != "Equilibrium"),]) + 
     theme_bw(base_size = 15) + scale_color_manual(values=c("red", "black", "forestgreen")) + 
     geom_vline(aes(xintercept = 2), col = "blue") + 
     geom_text(aes(x=1.8, label="Positive Soil Moisture Anomaly", y=1.5), colour="blue", angle=90, text=element_text(size=11))
-# insert map
+
+    
+    
+    # insert map
   Mini_ras <- plot_ras[[3]]
   Mini_ras[Data_Pos[which(plot_ras[[3]][Data_Pos] < 0)]] <- 0
   Mini_ras[Data_Pos[which(plot_ras[[3]][Data_Pos] >= 0)]] <- 10000
@@ -206,3 +212,5 @@ Fun_Plot <- function(Region, SoilLayer){
 ################################################################################
 Fun_Plot(Region = "SWEurope", SoilLayer = 1)
 Fun_Plot(Region = "SWEurope", SoilLayer = 2)
+Fun_Plot(Region = "SWEurope", SoilLayer = 3)
+Fun_Plot(Region = "SWEurope", SoilLayer = 4)
