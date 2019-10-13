@@ -165,52 +165,21 @@ Fun_Vegetation <- function(Regions, RegionFiles, Extents, From, To, Lags, Cores)
 ####--------------- Fun_PFTs [Regions, RegionFiles, Extents, From, To, Occ]
 # (aggregating PFT data, downloading species occurences, building PFT rasters)
 # ----
-Fun_PFTs <- function(Regions, RegionFiles, Extents, From, To, Occ) {
+Fun_PFTs <- function(Traits, Regions, RegionFiles, Extents) {
+  print("++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++")
+  print("OBTAINING DATA FROM BIEN DATA BASE AND CREATING RASTERS")
+  print("++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++")
   source(paste(Dir.Codes, "S4_PFTs.R", sep="/"))
-  print("++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++")
-  print("CALCULATING SPECIES SPECIFIC-TRAIT MEANS")
-  print("++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++")
-  # calculating species-specific trait means
-  if (!file.exists(paste(Dir.TRY, "/SpeciesTraits.RData", sep = ""))) {
-    PFTs() # species-specific trait means
-  } else {
-    print("Species-specific trait means already calculated")
+  for(TraitLoop in 1:length(Traits)){
+    for(RegionLoop in 1:length(RegionFiles)){
+      BIEN(
+        Trait = Traits[[TraitLoop]],
+        Region = Regions[[RegionLoop]],
+        RegionFile = RegionFiles[[RegionLoop]],
+        Extent =Extents[[RegionLoop]]
+      ) 
+    }
   }
-  print("++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++")
-  print("OBTAINING SPECIES OCCURENCE RECORDS FROM GBIF")
-  print("++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++")
-  # figuring out ISO3166 codes for selected regions
-  ISO3166_df <- read.csv(paste(Dir.Mask, "/ISO3166.csv", sep = "")) # read ISO3166 country code list
-  CountCodes <- ISO3166_df$ISO.3166.ALPHA.2[which(ISO3166_df$Country %in% unlist(Regions))]
-  CountCodes <- toString(CountCodes)
-  CountCodes <- gsub(pattern = ", ", replacement = ";", x = CountCodes)
-  # Download occurence files from GBIF
-  if (Occ == "Download") {
-    GbifStat <- NULL
-    # species occurences
-    Attempt <- 0
-    while (is.null(GbifStat) || GbifStat != "Done") {
-      if (Attempt > 0) {
-        print("Encountered an error and starting the downloading of GBIF occurence data again.
-              This is usually due to issues with the GBIF server connection and you don't have
-              to worry as long as your internet connection is stable.")
-      }
-      Attempt <- Attempt + 1
-      try(GbifStat <- DistMaps(Species = "All", Years = From:To, CountCodes = CountCodes))
-      }
-    } else {
-      print("Occurence data will not be downloaded according to function call.")
-    }
-  # generate mean rasters of PFTs across specifiec regions looping over regions
-  for (CompReg in 1:length(Regions)) {
-    if (!file.exists(paste(Dir.TRY, "/TRY-", RegionFiles[[CompReg]], ".nc", sep = ""))) {
-      PFTRasters(Region = Regions[[CompReg]], RegionFile = RegionFiles[[CompReg]],
-                 Extent = Extents[[CompReg]], CountCodes = CountCodes)
-    } else {
-      print(paste("TRY data already aggregated to mean raster for region ",
-                  RegionFiles[[CompReg]], sep = ""))
-    }
-  } # region-loop
 } # Fun_PFTs
 ####--------------- Fun_Compadre [Variables, Regions, RegionFiles, Extents]
 # (selecting and preparing data, and making COMPADRE data into rasters) ----
@@ -236,16 +205,17 @@ Fun_COMPADRE <- function(Variables, Regions, RegionFiles, Extents) {
   } # CompVar-loop
 } # Fun_Compadre
 ####--------------- FUNCTION CALLS ----
-Fun_Vegetation(Regions = list(c("Portugal", "Spain")),
-               RegionFiles = list("SWEurope"),
-               Extents = list(extent(-10,4.5,35,44)),
-               From = 1982, To = 2015, Lags = 0:12, Cores = 1)
+# Fun_Vegetation(Regions = list(c("Portugal", "Spain")),
+#                RegionFiles = list("SWEurope"),
+#                Extents = list(extent(-10,4.5,35,44)),
+#                From = 1982, To = 2015, Lags = 0:12, Cores = 1)
 
-# Fun_PFTs(Regions = list(c("Portugal", "Spain", "France", "Andorra"), "Brazil", "Australia"),
-#          RegionFiles = list("Iberian Region", "Caatinga", "Australia"),
-#          Extents = list(extent(-10,10,35,52), extent(-50,-34,-23,0), NULL),
-#          From = 1982, To = 2015, Occ = "Download")
- 
+Fun_PFTs(Traits = list("whole plant height", "leaf nitrogen content per leaf dry mass"),
+         Regions = list("United States of America"),
+         RegionFiles = list("Contiguous US"),
+         Extents = list(extent(-125, -66, 24, 51))
+)
+
 # Fun_COMPADRE(Variables = list("Reactivity", "Rho", "Pi", "FastSlow"),
 #              Regions = list(c("Portugal", "Spain", "France", "Andorra")),
 #              RegionFiles = list("Iberian Region"),
