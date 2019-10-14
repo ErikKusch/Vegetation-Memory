@@ -211,11 +211,14 @@ Fun_Plots <- function(Variables, RegionFiles, SoilLayers) {
   print("PRODUCING PLOTS OF VEGETATION MEMORY")
   print("++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++")
   source(paste(Dir.Codes, "SX_Plots.R", sep="/"))
-  for(LoopReg in 1:length(unique(RegionFiles))){
-    for(LoopSoil in SoilLayers){
-      Fun_Plot(Region = RegionFiles[[LoopReg]], SoilLayer = SoilLayers[[LoopSoil]])
-      }
-  }
+  # for(LoopReg in 1:length(unique(RegionFiles))){
+  #   for(LoopSoil in SoilLayers){
+  #     Fun_Plot(Region = RegionFiles[[LoopReg]], SoilLayer = SoilLayers[[LoopSoil]])
+  #     }
+  # }
+  print("++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++")
+  print("PRODUCING PLOTS OF LIFE HISTORIES")
+  print("++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++")
   for(LoopReg in 1:length(unique(RegionFiles))){
     for(LoopSoil in SoilLayers){
       for(LoopVar in 1:length(Variables)){

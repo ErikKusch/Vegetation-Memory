@@ -213,7 +213,7 @@ Fun_Plot <- function(Region, SoilLayer){
       scale_fill_manual(values = c(colatten, colreson)) + theme(legend.position = "none")
   # combining
   Combined_gg <- ggdraw() + draw_plot(Lines_gg) + draw_plot(Miniras_gg, x = 0.35, y = 0.33, scale = .3)
-  ggsave(file=paste(Dir.Plots, "/", Region, "_DynamicsTest", SoilLayer, ".jpeg", sep = ""), width = 32, height = 22, units = "cm", quality = 100)
+  ggsave(file=paste(Dir.Plots, "/", Region, "_Dynamics", SoilLayer, ".jpeg", sep = ""), width = 32, height = 22, units = "cm", quality = 100)
 } # end of Fun_Plot
 
 ####--------------- Comres [Variable, Region, Legend, SoilLayer] # plots of vegmem and LHTs
@@ -299,7 +299,7 @@ Comres <- function(Variable, Region, Legend = FALSE, SoilLayer = 1){
     tabout <- cbind(tabout, Output[starts[i]:(starts[i]+1)])
   }
   colnames(tabout) <- paste(rep(c("t-1", "Tair", "Qsoil", "Lag"), each = 2),rep(c("I", "S"), 4), sep="_")
-  rownames(tabout) <- c("V", "p")
+  rownames(tabout) <- c(paste("V (",dim(plot_df)[1]/4, ")", sep="") , "p-Value")
   tabout <- round(tabout,5)
   ## Plotting
   tbl <- tableGrob(tabout, theme = ttheme_minimal())
