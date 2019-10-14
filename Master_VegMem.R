@@ -210,13 +210,15 @@ Fun_COMPADRE <- function(Variables, Regions, RegionFiles, Extents) {
 #                Extents = list(extent(-10,4.5,35,44)),
 #                From = 1982, To = 2015, Lags = 0:12, Cores = 1)
 
-Fun_PFTs(Traits = list("whole plant height", "leaf nitrogen content per leaf dry mass"),
-         Regions = list("United States of America"),
-         RegionFiles = list("Contiguous US"),
-         Extents = list(extent(-125, -66, 24, 51))
-)
+# Fun_PFTs(Traits = list("whole plant height", "leaf nitrogen content per leaf dry mass"),
+#          Regions = list("United States of America", "Australia"),
+#          RegionFiles = list("Contiguous US", "Australia"),
+#          Extents = list(extent(-125, -66, 24, 51), NULL)
+# )
 
-# Fun_COMPADRE(Variables = list("Reactivity", "Rho", "Pi", "FastSlow"),
-#              Regions = list(c("Portugal", "Spain", "France", "Andorra")),
-#              RegionFiles = list("Iberian Region"),
-#              Extents = list(extent(-10,10,35,52)))
+Fun_COMPADRE(Variables = list("FastSlow", "Rho", "Pi", 
+                              "Reactivity", "FirstStepAtt", 
+                              "MaxAmp", "MaxAtt"),
+             Regions = list(c("Portugal", "Spain"), "United States of America"),
+             RegionFiles = list("SWEurope", "Contiguous US"),
+             Extents = list(extent(-10,4.5,35,44), extent(-125, -66, 24, 51)))
