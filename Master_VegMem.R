@@ -204,6 +204,28 @@ Fun_COMPADRE <- function(Variables, Regions, RegionFiles, Extents) {
     } # region-loop
   } # CompVar-loop
 } # Fun_Compadre
+####--------------- Fun_Plots [Variables, Regions, RegionFiles, Legends, SoilLayers]
+# (selecting and preparing data, and making COMPADRE data into rasters) ----
+Fun_Plots <- function(Variables, RegionFiles, SoilLayers) {
+  print("++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++")
+  print("PRODUCING PLOTS OF VEGETATION MEMORY")
+  print("++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++")
+  source(paste(Dir.Codes, "SX_Plots.R", sep="/"))
+  for(LoopReg in 1:length(unique(RegionFiles))){
+    for(LoopSoil in SoilLayers){
+      Fun_Plot(Region = RegionFiles[[LoopReg]], SoilLayer = SoilLayers[[LoopSoil]])
+      }
+  }
+  for(LoopReg in 1:length(unique(RegionFiles))){
+    for(LoopSoil in SoilLayers){
+      for(LoopVar in 1:length(Variables)){
+        Comres(Region = RegionFiles[[LoopReg]], SoilLayer = SoilLayers[[LoopSoil]],
+               Legend = TRUE, Variable = Variables[[LoopVar]]) 
+      }
+    }
+  }
+} # Fun_Compadre
+
 ####--------------- FUNCTION CALLS ----
 # Fun_Vegetation(Regions = list(c("Portugal", "Spain")),
 #                RegionFiles = list("SWEurope"),
@@ -216,9 +238,15 @@ Fun_COMPADRE <- function(Variables, Regions, RegionFiles, Extents) {
 #          Extents = list(extent(-125, -66, 24, 51), NULL)
 # )
 
-Fun_COMPADRE(Variables = list("FastSlow", "Rho", "Pi", 
-                              "Reactivity", "FirstStepAtt", 
-                              "MaxAmp", "MaxAtt"),
-             Regions = list(c("Portugal", "Spain"), "United States of America"),
-             RegionFiles = list("SWEurope", "Contiguous US"),
-             Extents = list(extent(-10,4.5,35,44), extent(-125, -66, 24, 51)))
+# Fun_COMPADRE(Variables = list("FastSlow", "Rho", "Pi", 
+#                               "Reactivity", "FirstStepAtt", 
+#                               "MaxAmp", "MaxAtt"),
+#              Regions = list(c("Portugal", "Spain"), "United States of America"),
+#              RegionFiles = list("SWEurope", "Contiguous US"),
+#              Extents = list(extent(-10,4.5,35,44), extent(-125, -66, 24, 51)))
+
+Fun_Plots(RegionFiles = list("SWEurope"), 
+          SoilLayers = c(1:4),
+          Variables = list("FSC-1", "FSC-2", "Rho", "Pi",
+                           "Reactivity", "FirstStepAtt",
+                           "MaxAmp", "MaxAtt"))

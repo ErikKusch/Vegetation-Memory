@@ -11,7 +11,7 @@ ClimVars = list("Qsoil1_mean", "Qsoil2_mean", "Qsoil3_mean", "Qsoil4_mean")
 ClimVars2 = list("Tair_mean", "Tair_mean", "Tair_mean", "Tair_mean")
 
 ################################################################################
-####--------------- PLOTTING FUNCTION ----
+####--------------- Fun_Plot [Region, SoilLayer] # all things vegetation memory (maps, varpar, system dynamics)
 Fun_Plot <- function(Region, SoilLayer){
   ####--------------- FILE SELECTION ----------------
   Files <- list.files(Dir.Memory)[grep(pattern = Region, list.files(Dir.Memory))]
@@ -151,7 +151,7 @@ Fun_Plot <- function(Region, SoilLayer){
     Data_Pos <- adjacent(plot_ras[[3]], cells=Click_Pos, directions=16, pairs=FALSE, include = TRUE)  
   }
   # Prepare Empty Data Frame and Progress Bar
-  plot_df <- data.frame(State = NA, Time = NA, Response = NA)
+  plot_df <- data.frame(State = NA, Time = NA, Response = NA, Lag = NA)
   counter <- 0
   print("Extracting Data")
   pb <- txtProgressBar(min = 0, max = length(Data_Pos), style = 3)
@@ -163,54 +163,150 @@ Fun_Plot <- function(Region, SoilLayer){
       }
     if(plot_ras[[3]][i] < 0){
       Identifier <- "Attenuation"
+      if(abs(plot_ras[[1]][i]) < 9){
+        Lags <- rep(paste("-0",plot_ras[[1]][i]+1, sep=""), 10)
+      }else{
+        Lags <- rep(paste("",-plot_ras[[1]][i]-1, sep=""), 10)
+      }
     }else{
       Identifier <- "Resonance"
+      if(plot_ras[[1]][i] < 9){
+        Lags <- rep(paste("0",plot_ras[[1]][i]+1, sep=""), 10)
+      }else{
+        Lags <- rep(paste("",plot_ras[[1]][i]+1, sep=""), 10)
+      }
     }
-    
     States <- c(Equilibrium, plot_ras[[3]][i], 
-                Equilibrium,Equilibrium,Equilibrium,Equilibrium)
+                rep(Equilibrium, 8))
     Times <- c(2,2+plot_ras[[1]][i], 
-               2+plot_ras[[1]][i]+abs(plot_ras[[3]][i]*plot_ras[[2]][i]/InverseProx),
-               3+plot_ras[[1]][i]+abs(plot_ras[[3]][i]*plot_ras[[2]][i]/InverseProx),
-               4+plot_ras[[1]][i]+abs(plot_ras[[3]][i]*plot_ras[[2]][i]/InverseProx),
-               5+plot_ras[[1]][i]+abs(plot_ras[[3]][i]*plot_ras[[2]][i]/InverseProx))
-    Response <- rep(Identifier, 6)
-    
+               2:9+plot_ras[[1]][i]+abs(plot_ras[[3]][i]*plot_ras[[2]][i]/InverseProx))
+    Response <- rep(Identifier, 10)
     plot_df <- rbind(plot_df, 
-                     data.frame(State = States, Time = Times, Response = Response))
+                     data.frame(State = States, Time = Times, Response = Response, Lag = Lags))
     counter <- counter + 1
     setTxtProgressBar(pb, counter)
   }
   plot_df <- na.omit(plot_df)
   plot_df <- rbind(plot_df, data.frame(State=rep(Equilibrium, 2),
                               Time =c(0,2),
-                              Response = rep("Equilibrium",2)) )
-  ## Plotting, these one needs adding of vertical lines and text!!!
+                              Response = rep("Equilibrium",2),
+                              Lag = rep("00", 2)))
+  # colours for different responses and their lags
+  colreson <- got(n = 13, alpha = 1, begin = 0, end = .8, direction = 1, option = "tyrell")
+  colreson <- colreson[sort(as.numeric(unique(plot_df$Lag)[which(as.numeric(unique(plot_df$Lag)) > 0)]))]
+  colatten <- got(n = 13, alpha = 1, begin = .2, end = 1, direction = -1, option = "targaryen2")
+  colatten <- colatten[sort(abs(as.numeric(unique(plot_df$Lag))[which(as.numeric(unique(plot_df$Lag)) < 0)]))]
+  ## Plotting
   # dynamics
-  Lines_gg <- ggplot(plot_df, aes(x = Time, y = State, col = Response)) + 
-      geom_line(data = plot_df[which(plot_df$Response == "Equilibrium"),]) +  
-    stat_smooth(se=FALSE, fullrange = FALSE, data = plot_df[which(plot_df$Response != "Equilibrium"),]) + 
-    theme_bw(base_size = 15) + scale_color_manual(values=c("red", "black", "forestgreen")) + 
-    geom_vline(aes(xintercept = 2), col = "blue") + 
-    geom_text(aes(x=1.8, label="Positive Soil Moisture Anomaly", y=1.5), colour="blue", angle=90, text=element_text(size=11))
-
-    
-    
-    # insert map
-  Mini_ras <- plot_ras[[3]]
-  Mini_ras[Data_Pos[which(plot_ras[[3]][Data_Pos] < 0)]] <- 0
-  Mini_ras[Data_Pos[which(plot_ras[[3]][Data_Pos] >= 0)]] <- 10000
-  Mini_ras[which(values(Mini_ras) != 10000 & values(Mini_ras) != 0)] <- -10000
-  Miniras_gg <- gplot(Mini_ras) + geom_tile(aes(fill = value)) +
-    scale_fill_gradient2(low = 'grey', mid = "red", high = 'forestgreen', na.value = NA) +
-    coord_equal() + theme_void(base_size = 15) + theme(legend.position = "none")
+  Lines_gg <- ggplot(plot_df, aes(x = Time, y = State, colour = as.factor(Lag))) + 
+    geom_line(data = plot_df[which(plot_df$Response == "Equilibrium"),]) +  
+      stat_smooth(se=.9, fullrange = FALSE, data = plot_df[which(plot_df$Response != "Equilibrium"),], aes(group = Lag), size = .7, alpha = 0.2) +
+    theme_bw(base_size = 15) + geom_vline(aes(xintercept = 2), col = "blue") + 
+    geom_text(aes(x=1.8, label="Positive Soil Moisture Anomaly", y=1.5), colour="blue", angle=90) + scale_colour_manual(values=c(colatten, "black", colreson)) + 
+      theme(legend.position = "none")
+  # insert map
+  Mini_ras <- plot_ras[[1]]
+  values(Mini_ras)[which(values(plot_ras[[3]])<0)] <- -values(Mini_ras)[which(values(plot_ras[[3]])<0)]-1
+  values(Mini_ras)[which(values(plot_ras[[3]])>=0)] <- values(Mini_ras)[which(values(plot_ras[[3]])>=0)]+1
+  Miniras_gg <- gplot(Mini_ras) + geom_tile(aes(fill = as.factor(value))) +
+      coord_equal() + theme_void(base_size = 15)  + 
+      scale_fill_manual(values = c(colatten, colreson)) + theme(legend.position = "none")
   # combining
-  Combined_gg <- ggdraw() + draw_plot(Lines_gg) + draw_plot(Miniras_gg, 0.53, 0.65, 0.35, 0.3)
-  ggsave(file=paste(Dir.Plots, "/", Region, "_Dynamics", SoilLayer, ".jpeg", sep = ""), width = 32, height = 22, units = "cm", quality = 100)
+  Combined_gg <- ggdraw() + draw_plot(Lines_gg) + draw_plot(Miniras_gg, x = 0.35, y = 0.33, scale = .3)
+  ggsave(file=paste(Dir.Plots, "/", Region, "_DynamicsTest", SoilLayer, ".jpeg", sep = ""), width = 32, height = 22, units = "cm", quality = 100)
 } # end of Fun_Plot
 
-################################################################################
-Fun_Plot(Region = "SWEurope", SoilLayer = 1)
-Fun_Plot(Region = "SWEurope", SoilLayer = 2)
-Fun_Plot(Region = "SWEurope", SoilLayer = 3)
-Fun_Plot(Region = "SWEurope", SoilLayer = 4)
+####--------------- Comres [Variable, Region, Legend, SoilLayer] # plots of vegmem and LHTs
+Comres <- function(Variable, Region, Legend = FALSE, SoilLayer = 1){
+  col.tair <- got(n = 1, alpha = 1, begin = 0, end = 1, direction = -1, option = "tully")
+  col.ndvi <- got(n = 1, alpha = 1, begin = 0, end = 1, direction = 1, option = "tyrell")
+  col.qsoil <- got(n = 1, alpha = 1, begin = 0, end = 1, direction = 1, option = "white_walkers")
+  col.mem <- got(n = 1, alpha = 1, begin = 0, end = 1, direction = -1, option = "greyjoy")
+  VarHold <- Variable
+  if(Variable == "FSC-1" | Variable == "FSC-2"){
+    Variable <- "FastSlow"
+  }
+  ## Memory Data
+  # Memory
+  Dir.Reg <- paste(Dir.Memory, "/", Region, "-1981_2015", sep="")
+  Files <- list.files(Dir.Reg)[grep(list.files(Dir.Reg), pattern = ".nc")]
+  Memory_ras <- brick(paste(Dir.Reg, Files[SoilLayer], sep="/"))[[1]]
+  # t-1
+  Dir.Reg <- paste(Dir.Memory, "/", Region, "-1981_2015", sep="")
+  Files <- list.files(Dir.Reg)[grep(list.files(Dir.Reg), pattern = ".nc")]
+  NDVI_ras <- brick(paste(Dir.Reg, Files[SoilLayer], sep="/"))[[2]]
+  # Qsoil
+  Dir.Reg <- paste(Dir.Memory, "/", Region, "-1981_2015", sep="")
+  Files <- list.files(Dir.Reg)[grep(list.files(Dir.Reg), pattern = ".nc")]
+  Qsoil_ras <- brick(paste(Dir.Reg, Files[SoilLayer], sep="/"))[[3]]
+  # Tair
+  Dir.Reg <- paste(Dir.Memory, "/", Region, "-1981_2015", sep="")
+  Files <- list.files(Dir.Reg)[grep(list.files(Dir.Reg), pattern = ".nc")]
+  Tair_ras <- brick(paste(Dir.Reg, Files[SoilLayer], sep="/"))[[4]]
+  ## COMPADRE data
+  Dir.Comp <- paste(Dir.Compadre, Variable, sep="/")
+  Compad_ras <- list.files(Dir.Comp)[grep(list.files(Dir.Comp), pattern = Region)]
+  if(VarHold != "FSC-2"){
+    Compad_ras <- raster(paste(Dir.Comp, Compad_ras, sep="/"))[[1]]
+  }else{
+    Compad_ras <- brick(paste(Dir.Comp, Compad_ras, sep="/"))[[2]]
+  }
+  values(Compad_ras)[which(values(Compad_ras) > quantile(values(Compad_ras), .66, na.rm = TRUE))] <- quantile(values(Compad_ras), .66, na.rm = TRUE)
+  if(VarHold == "FSC-1" | VarHold == "FSC-2"){
+    values(Compad_ras)[which(values(Compad_ras) < quantile(values(Compad_ras), .05, na.rm = TRUE))] <- quantile(values(Compad_ras), .05, na.rm = TRUE) 
+  }
+  plot_df <- data.frame(
+    Data = c(values(Memory_ras), values(NDVI_ras), values(Qsoil_ras), values(Tair_ras)), 
+    Identifiers = rep(c("Lag", "t-1", "Qsoil1", "Tair"), each = length(values(Memory_ras))),
+    Compadre = rep(values(Compad_ras), 4)
+  )
+  Variable <- VarHold
+  plot_df <- na.omit(plot_df)
+  Output <- as.list(rep(NA,16))
+  Idents <- c("t-1", "Tair", "Qsoil1", "Lag")
+  for(i in 0:(length(Idents)-1)){
+    Output[[(4*i+1)]] <- summary(lm(Data ~ Compadre, data = plot_df[which(plot_df$Identifiers == Idents[(i+1)]),]))[["coefficients"]][1,1]
+    Output[[(4*i+2)]] <- summary(lm(Data ~ Compadre, data = plot_df[which(plot_df$Identifiers == Idents[(i+1)]),]))[["coefficients"]][1,4]
+    Output[[(4*i+3)]] <- summary(lm(Data ~ Compadre, data = plot_df[which(plot_df$Identifiers == Idents[(i+1)]),]))[["coefficients"]][2,1]
+    Output[[(4*i+4)]] <- summary(lm(Data ~ Compadre, data = plot_df[which(plot_df$Identifiers == Idents[(i+1)]),]))[["coefficients"]][2,4]
+  }
+  Linesa <- rep(1,4)
+  Linesa[which(unlist(Output)[c(4,8,12,16)] > .05)] <- 2
+  Lines <- c(Linesa[4], Linesa[1], Linesa[3], Linesa[2])
+  Lines <- rep(Lines, each = length(which(plot_df$Identifiers == "Lag")))
+  Lines <- as.factor(Lines)
+  plot_df <- cbind(plot_df, Lines)
+  if(length(levels(Lines)) == 2){
+    if(Legend == TRUE){
+      plot <- ggplot(data = plot_df, aes(x = Compadre, y = Data, col = Identifiers, linetype = Lines)) + geom_point(alpha = 0.5, size = 3.5) + theme_bw(base_size = 25) +  xlab(paste("COMPADRE", Variable)) + ylab("Vegetation Response Coefficients") + geom_hline(yintercept = 0, linetype="dotted") + stat_smooth(method = "lm", level = 0.66, aes(linetype = Lines)) + scale_color_manual(values=c(col.mem, col.qsoil, col.ndvi, col.tair)) + 
+        labs(linetype="p < .05", colour="Identifiers") + scale_linetype_manual(values = c(1, 2), labels = c("Yes", "No")) + guides(colour = guide_legend(ncol=2, override.aes = list(size = 5)),linetype = guide_legend(override.aes = list(size = 3)))
+    }else{
+      plot <- ggplot(data = plot_df, aes(x = Compadre, y = Data, col = Identifiers, linetype = Lines)) + geom_point(alpha = 0.5, size = 3.5) + theme_bw(base_size = 25) +  xlab(paste("COMPADRE", Variable)) + ylab("Vegetation Response Coefficients") + geom_hline(yintercept = 0, linetype="dotted") + stat_smooth(method = "lm", level = 0.66, aes(linetype = Lines)) + scale_color_manual(values=c(col.mem, col.qsoil, col.ndvi, col.tair)) + theme(legend.position = "none")
+    }
+  }else{
+    if(Legend == TRUE){
+      plot <- ggplot(data = plot_df, aes(x = Compadre, y = Data, col = Identifiers, linetype = Lines)) + geom_point(alpha = 0.5, size = 3.5) + theme_bw(base_size = 25) +  xlab(paste("COMPADRE", Variable)) + ylab("Vegetation Response Coefficients") + geom_hline(yintercept = 0, linetype="dotted") + stat_smooth(method = "lm", level = 0.66, linetype = 2) + scale_color_manual(values=c(col.mem, col.qsoil, col.ndvi, col.tair)) + 
+        labs(linetype="p < .05", colour="Identifiers") + scale_linetype_manual(values = c(1, 2), labels = c("Yes", "No")) + guides(colour = guide_legend(ncol=2, override.aes = list(size = 5)),linetype = guide_legend(override.aes = list(size = 2)))
+    }else{
+      plot <- ggplot(data = plot_df, aes(x = Compadre, y = Data, col = Identifiers, linetype = Lines)) + geom_point(alpha = 0.5, size = 3.5) + theme_bw(base_size = 25) +  xlab(paste("COMPADRE", Variable)) + ylab("Vegetation Response Coefficients") + geom_hline(yintercept = 0, linetype="dotted") + stat_smooth(method = "lm", level = 0.66, linetype = 2) + scale_color_manual(values=c(col.mem, col.qsoil, col.ndvi, col.tair)) + theme(legend.position = "none")
+    }
+  }
+  ## Preparing table
+  Output <- unlist(Output)
+  tabout <- data.frame(Column = Output[1:2])
+  starts <- seq(1,length(Output), by = 2)
+  for(i in 2:(length(Output)/2)){
+    tabout <- cbind(tabout, Output[starts[i]:(starts[i]+1)])
+  }
+  colnames(tabout) <- paste(rep(c("t-1", "Tair", "Qsoil", "Lag"), each = 2),rep(c("I", "S"), 4), sep="_")
+  rownames(tabout) <- c("V", "p")
+  tabout <- round(tabout,5)
+  ## Plotting
+  tbl <- tableGrob(tabout, theme = ttheme_minimal())
+  # Plot chart and table into one object
+  combinedplot <- grid.arrange(plot, tbl,
+                               nrow=2,
+                               as.table=TRUE,
+                               heights=c(6,1))
+  ggsave(combinedplot, file=paste(Dir.Plots, "/", Region, "_C", Variable, "_", SoilLayer, ".jpeg", sep = ""), width = 42, height = 22, units = "cm", quality = 100)
+} # end of Comres
