@@ -22,14 +22,13 @@ BIEN <- function(Trait, Region, RegionFile, Extent){
     saveRDS(BIEN_df, file = paste(Dir.TRY, "/BIEN_", Trait, ".rds", sep=""))
   }
   # DATA MANIPULATION ----
-  Spec_BIEN <- BIEN_df[which(BIEN_df$country %in% Region),] # limiting to Region (by country name)
+  Spec_BIEN <- BIEN_df[which(BIEN_df$country %in% BIENReg),] # limiting to Region (by country name)
   ## transforming into raster
   BIENpts <- na.omit(data.frame(y = Spec_BIEN$latitude, x = Spec_BIEN$longitude, 
                                 z =as.numeric(Spec_BIEN$trait_value)))
   coordinates(BIENpts) = ~x+y # convert x and y to coordinates
   rast <- raster(ext=extent(ref_ras), resolution=res(ref_ras)) # create raster to be filled
   rasOut <- rasterize(x = BIENpts, y = rast, field = BIENpts$z, fun = mean) # rasterize irregular points
-  plot(rasOut)
   # REGION SELECTION ----
   Shapes <- readOGR(Dir.Mask,'ne_50m_admin_0_countries', verbose = FALSE)
   RegObj <- RegionSelection(Region = Region, RegionFile = RegionFile, Extent = Extent)
