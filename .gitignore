@@ -12,5 +12,11 @@
 !*/*/
 !*/*/*/
 
+# but not the COMPADRE codes by Rob
+*/*/DeriveDemographics-functions.R
+*/*/cdb_newToOldFormat.R
+*/*/derive_demographics.r
+
+
 
 .Rproj.user
