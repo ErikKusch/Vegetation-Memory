@@ -4,7 +4,7 @@ RasterCOMPADRE <- function(Variable, Region, RegionFile, Extent){
   print("#################################################")
   print(paste("Rasterising COMPADRE ", Variable, " across ", RegionFile, sep=""))
   # LOADING DATA ----
-  Compadre_df <- read.csv(paste(Dir.Compadre, "/allCOMPADREOutput.csv", sep="")) # load data frame
+  Compadre_df <- read.csv(paste(Dir.Compadre, "/derived_demographicsAllCOMPADRE.csv", sep="")) # load data frame
   NDVI_ras <- brick(paste(Dir.Gimms.Monthly,"/GlobalNDVI_20112015.nc", sep="")) # reference raster
   ref_ras <- NDVI_ras[[6]] # select only one years data
   ref_ras[which(values(ref_ras) > -1)] <- 8888 # select only land pixels and set them to -8888
@@ -42,13 +42,13 @@ RasterCOMPADRE <- function(Variable, Region, RegionFile, Extent){
     rast <- raster(ext=extent(ref_ras), resolution=res(ref_ras)) # create raster to be filled
     rasOut<-rasterize(x = pts, y = rast, field = pts$z, fun = mean) # rasterize irregular points
   }
-    # CROPPING AND MASKING ----
-    rasC <- crop(rasOut, area) ## Occurence cropping and masking
-    rasF <- mask(rasC, Shapes[location,]) # masking via Shapefile
-    # DATA EXPORT ----
-    Dir.Temp.Compadre <- paste(Dir.Compadre, Variable, sep="/")
-    dir.create(Dir.Temp.Compadre)
-    values(rasF)[which(values(rasF) == Inf)] <- NA # get rid off Inf values (when dealing with Rho)
-    invisible(writeRaster(rasF, filename = paste(Dir.Temp.Compadre, "/",Variable,"_",RegionFile,sep=""),
-                          overwrite=TRUE, format="CDF"))
+  # CROPPING AND MASKING ----
+  rasC <- crop(rasOut, area) ## Occurence cropping and masking
+  rasF <- mask(rasC, Shapes[location,]) # masking via Shapefile
+  # DATA EXPORT ----
+  Dir.Temp.Compadre <- paste(Dir.Compadre, Variable, sep="/")
+  dir.create(Dir.Temp.Compadre)
+  values(rasF)[which(values(rasF) == Inf)] <- NA # get rid off Inf values (when dealing with Rho)
+  invisible(writeRaster(rasF, filename = paste(Dir.Temp.Compadre, "/",Variable,"_",RegionFile,sep=""),
+                        overwrite=TRUE, format="CDF"))
 }# end of RasterCOMPADRE
