@@ -217,7 +217,7 @@ Fun_Plot <- function(Region, SoilLayer){
 } # end of Fun_Plot
 
 ####--------------- Comres [Variable, Region, Legend, SoilLayer] # plots of vegmem and LHTs
-Comres <- function(Variable, Region, Legend = FALSE, SoilLayer = 1){
+Comres <- function(Variable, Region, Legend = TRUE, SoilLayer = 1){
   col.tair <- got(n = 1, alpha = 1, begin = 0, end = 1, direction = -1, option = "tully")
   col.ndvi <- got(n = 1, alpha = 1, begin = 0, end = 1, direction = 1, option = "tyrell")
   col.qsoil <- got(n = 1, alpha = 1, begin = 0, end = 1, direction = 1, option = "white_walkers")
