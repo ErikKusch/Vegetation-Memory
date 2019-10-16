@@ -9,8 +9,3 @@ source("Y - Codes/S0c_Functions.R") # Loading miscellaneous functions
 ModVars <- c("Tair", "Qsoil1", "Qsoil2", "Qsoil3", "Qsoil4")
 ClimVars = list("Qsoil1_mean", "Qsoil2_mean", "Qsoil3_mean", "Qsoil4_mean")
 ClimVars2 = list("Tair_mean", "Tair_mean", "Tair_mean", "Tair_mean")
-
-Variable = "MaxAtt"
-Region = "SWEurope"
-Legend = TRUE
-
