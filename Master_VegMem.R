@@ -211,11 +211,11 @@ Fun_Plots <- function(Variables, RegionFiles, SoilLayers) {
   print("PRODUCING PLOTS OF VEGETATION MEMORY")
   print("++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++")
   source(paste(Dir.Codes, "SX_Plots.R", sep="/"))
-  # for(LoopReg in 1:length(unique(RegionFiles))){
-  #   for(LoopSoil in SoilLayers){
-  #     Fun_Plot(Region = RegionFiles[[LoopReg]], SoilLayer = SoilLayers[[LoopSoil]])
-  #     }
-  # }
+  for(LoopReg in 1:length(unique(RegionFiles))){
+    for(LoopSoil in SoilLayers){
+      Fun_Plot(Region = RegionFiles[[LoopReg]], SoilLayer = SoilLayers[[LoopSoil]])
+      }
+  }
   print("++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++")
   print("PRODUCING PLOTS OF LIFE HISTORIES")
   print("++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++")
@@ -227,7 +227,7 @@ Fun_Plots <- function(Variables, RegionFiles, SoilLayers) {
       }
     }
   }
-} # Fun_Compadre
+} # Fun_Plots
 
 ####--------------- FUNCTION CALLS ----
 # Fun_Vegetation(Regions = list(c("Portugal", "Spain")),
