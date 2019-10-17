@@ -230,25 +230,25 @@ Fun_Plots <- function(Variables, RegionFiles, SoilLayers) {
 } # Fun_Plots
 
 ####--------------- FUNCTION CALLS ----
-# Fun_Vegetation(Regions = list(c("Portugal", "Spain")),
-#                RegionFiles = list("SWEurope"),
-#                Extents = list(extent(-10,4.5,35,44)),
-#                From = 1982, To = 2015, Lags = 0:12, Cores = 1)
+Fun_Vegetation(Regions = list(c("Portugal", "Spain")),
+               RegionFiles = list("SWEurope"),
+               Extents = list(extent(-10,4.5,35,44)),
+               From = 1982, To = 2015, Lags = 0:12, Cores = 1)
 
-# Fun_PFTs(Traits = list("whole plant height", "leaf nitrogen content per leaf dry mass"),
-#          Regions = list("United States of America", "Australia"),
-#          RegionFiles = list("Contiguous US", "Australia"),
-#          Extents = list(extent(-125, -66, 24, 51), NULL)
-# )
+Fun_PFTs(Traits = list("whole plant height", "leaf nitrogen content per leaf dry mass"),
+         Regions = list("United States of America", "Australia"),
+         RegionFiles = list("Contiguous US", "Australia"),
+         Extents = list(extent(-125, -66, 24, 51), NULL)
+)
 
-# Fun_COMPADRE(Variables = list("FastSlow", "Rho", "Pi", 
-#                               "Reactivity", "FirstStepAtt", 
-#                               "MaxAmp", "MaxAtt"),
-#              Regions = list(c("Portugal", "Spain"), "United States of America"),
-#              RegionFiles = list("SWEurope", "Contiguous US"),
-#              Extents = list(extent(-10,4.5,35,44), extent(-125, -66, 24, 51)))
+Fun_COMPADRE(Variables = list("FastSlow", "Rho", "Pi",
+                              "Reactivity", "FirstStepAtt",
+                              "MaxAmp", "MaxAtt"),
+             Regions = list(c("Portugal", "Spain"), "United States of America"),
+             RegionFiles = list("SWEurope", "Contiguous US"),
+             Extents = list(extent(-10,4.5,35,44), extent(-125, -66, 24, 51)))
 
-Fun_Plots(RegionFiles = list("SWEurope"), 
+Fun_Plots(RegionFiles = list("SWEurope"),
           SoilLayers = c(1:4),
           Variables = list("FSC-1", "FSC-2", "Rho", "Pi",
                            "Reactivity", "FirstStepAtt",
