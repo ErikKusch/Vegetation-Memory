@@ -20,7 +20,8 @@ RasterCOMPADRE <- function(Variable, Region, RegionFile, Extent){
     VariableCol <- match(FSVars, colnames(Compadre_df))
     FSLoads <- list(c(.87,.53,.7,-.8,.04,-.81,-.25,-.03,.12), # PCA 1 according to Salguero-Gomez, 2017
                     c(.15,.27,.28,-.05,-.79,.32,.65,.7,.26)) # PCA 2 according to Salguero-Gomez, 2017
-    pts <- na.omit(data.frame(y = Compadre_df$Lat, x = Compadre_df$Lon, z = Compadre_df[,VariableCol]))
+      pts <- na.omit(data.frame(y = Compadre_df$Lat, x = Compadre_df$Lon, z = Compadre_df[,VariableCol]))
+    ## PCA calculations
     PCA1_df <- t(t(pts[,-1:-2]) * FSLoads[[1]]) # multiplying by first axis loadings
     PCA1_df <- rowSums(PCA1_df) # build sums for single index along PCA 1
     PCA1_df <- cbind(pts[,1:2], PCA1_df) # binding with coordinates
@@ -52,3 +53,4 @@ RasterCOMPADRE <- function(Variable, Region, RegionFile, Extent){
   invisible(writeRaster(rasF, filename = paste(Dir.Temp.Compadre, "/",Variable,"_",RegionFile,sep=""),
                         overwrite=TRUE, format="CDF"))
 }# end of RasterCOMPADRE
+
