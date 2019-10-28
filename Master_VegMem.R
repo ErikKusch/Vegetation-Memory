@@ -162,48 +162,7 @@ Fun_Vegetation <- function(Regions, RegionFiles, Extents, From, To, Lags, Cores)
                  Cumlags = list(Lags, Lags, Lags, Lags), FromY = FromY, ToY = To, UAbs = TRUE)
   } # CoeffScaling function 
 } # Fun_Vegetation
-####--------------- Fun_PFTs [Regions, RegionFiles, Extents, From, To, Occ]
-# (aggregating PFT data, downloading species occurences, building PFT rasters)
-# ----
-Fun_PFTs <- function(Traits, Regions, RegionFiles, Extents) {
-  print("++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++")
-  print("OBTAINING DATA FROM BIEN DATA BASE AND CREATING RASTERS")
-  print("++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++")
-  source(paste(Dir.Codes, "S4_PFTs.R", sep="/"))
-  for(TraitLoop in 1:length(Traits)){
-    for(RegionLoop in 1:length(RegionFiles)){
-      BIEN(
-        Trait = Traits[[TraitLoop]],
-        Region = Regions[[RegionLoop]],
-        RegionFile = RegionFiles[[RegionLoop]],
-        Extent =Extents[[RegionLoop]]
-      ) 
-    }
-  }
-} # Fun_PFTs
-####--------------- Fun_Compadre [Variables, Regions, RegionFiles, Extents]
-# (selecting and preparing data, and making COMPADRE data into rasters) ----
-Fun_COMPADRE <- function(Variables, Regions, RegionFiles, Extents) {
-  print("++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++")
-  print("COMPADRE ANALYSES")
-  print("++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++")
-  source(paste(Dir.Codes, "S4_COMPADRE.R", sep="/"))
-  # Build rasters of compadre variables across study regions looping over Compadre
-  # variables looping over regions
-  for (CompVar in 1:length(Variables)) {
-    for (CompReg in 1:length(Regions)) {
-      if (!file.exists(paste(Dir.Compadre, "/", Variables[[CompVar]], "/",
-                             Variables[[CompVar]], "_", RegionFile = RegionFiles[[CompReg]], ".nc",
-                             sep = ""))) {
-        RasterCOMPADRE(Variable = Variables[[CompVar]], Region = Regions[[CompReg]],
-                       RegionFile = RegionFiles[[CompReg]], Extent = Extents[[CompReg]])
-      } else {
-        print(paste(Variables[[CompVar]], " already rasterised across ",
-                    RegionFiles[[CompReg]], sep = ""))
-      }
-    } # region-loop
-  } # CompVar-loop
-} # Fun_Compadre
+
 ####--------------- Fun_Plots [Variables, Regions, RegionFiles, Legends, SoilLayers]
 # (selecting and preparing data, and making COMPADRE data into rasters) ----
 Fun_Plots <- function(Variables, RegionFiles, SoilLayers) {
@@ -211,45 +170,23 @@ Fun_Plots <- function(Variables, RegionFiles, SoilLayers) {
   print("PRODUCING PLOTS OF VEGETATION MEMORY")
   print("++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++")
   source(paste(Dir.Codes, "SX_Plots.R", sep="/"))
+  Fun_Plot(Region = RegionFiles, SoilLayer = 1, Scaled = FALSE)
+  Fun_Plot(Region = RegionFiles, SoilLayer = 1, Scaled = TRUE)
   for(LoopReg in 1:length(unique(RegionFiles))){
     for(LoopSoil in SoilLayers){
       Fun_Plot(Region = RegionFiles[[LoopReg]], SoilLayer = SoilLayers[[LoopSoil]])
       }
   }
-  print("++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++")
-  print("PRODUCING PLOTS OF LIFE HISTORIES")
-  print("++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++")
-  for(LoopReg in 1:length(unique(RegionFiles))){
-    for(LoopSoil in SoilLayers){
-      for(LoopVar in 1:length(Variables)){
-        Comres(Region = RegionFiles[[LoopReg]], SoilLayer = SoilLayers[[LoopSoil]],
-               Legend = TRUE, Variable = Variables[[LoopVar]]) 
-      }
-    }
-  }
+
 } # Fun_Plots
 
 ####--------------- FUNCTION CALLS ----
-Fun_Vegetation(Regions = list(c("Portugal", "Spain")),
-               RegionFiles = list("SWEurope"),
-               Extents = list(extent(-10,4.5,35,44)),
-               From = 1982, To = 2015, Lags = 0:12, Cores = 1)
+## UNITED STATES STILL MISSING HERE
+# Fun_Vegetation(Regions = list(c("Portugal", "Spain", "France", "Andorra"), "Brazil", "Australia"),
+#                RegionFiles = list("Iberian Region", "Caatinga", "Australia"),
+#                Extents = list(extent(-10,10,35,52), extent(-50,-34,-23,0), NULL),
+#                From = 1982, To = 2015, Lags = 0:12, Cores = 5)
 
-Fun_PFTs(Traits = list("whole plant height", "leaf nitrogen content per leaf dry mass"),
-         Regions = list("United States of America", "Australia"),
-         RegionFiles = list("Contiguous US", "Australia"),
-         Extents = list(extent(-125, -66, 24, 51), NULL)
-)
+Fun_Plots(RegionFiles = list("Iberian Region", "Caatinga", "Australia"),
+          SoilLayers = c(1:4))
 
-Fun_COMPADRE(Variables = list("FastSlow", "Rho", "Pi",
-                              "Reactivity", "FirstStepAtt",
-                              "MaxAmp", "MaxAtt"),
-             Regions = list(c("Portugal", "Spain"), "United States of America"),
-             RegionFiles = list("SWEurope", "Contiguous US"),
-             Extents = list(extent(-10,4.5,35,44), extent(-125, -66, 24, 51)))
-
-Fun_Plots(RegionFiles = list("SWEurope"),
-          SoilLayers = c(1:4),
-          Variables = list("FSC-1", "FSC-2", "Rho", "Pi",
-                           "Reactivity", "FirstStepAtt",
-                           "MaxAmp", "MaxAtt"))
