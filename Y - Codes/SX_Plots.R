@@ -189,10 +189,11 @@ Fun_Plot <- function(Region, SoilLayer = 1, Scaled = FALSE){
   ## Saving Files
   if(length(Region) ==1){
     jpeg(file=paste(Dir.Plots, "/", paste(Region,collapse=""), "_VarPar", SoilLayer, ".jpeg", sep = ""), width = 32, height = 22, units = "cm", quality = 100, res = 100)
-    VarPars[[1]]
+    print(VarPars[[1]])
+    dev.off()
   }else{
     height <- 22*round(length(Region)/2)
-    width <- 44
+    width <- 42
     jpeg(file=paste(Dir.Plots, "/", paste(Region,collapse=""), "_VarPar", SoilLayer, ".jpeg", sep = ""), width = width, height = height, units = "cm", quality = 100, res = 100)
     
     if(length(Region)==2){
