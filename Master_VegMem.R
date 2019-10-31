@@ -6,7 +6,8 @@ source("Y - Codes/S0b_Directories.R") # setting directories
 ####--------------- FUNCTIONS ----
 source("Y - Codes/S0c_Functions.R") # Loading miscellaneous functions
 ####--------------- VARIABLE VECTORS ----
-ModVars <- c("Tair", "Qsoil1", "Qsoil2", "Qsoil3", "Qsoil4")
+ModVars <- c("Tair", "Qsoil1")
+# ModVars <- c("Tair", "Qsoil1", "Qsoil2", "Qsoil3", "Qsoil4")
 ClimVars = list("Qsoil1_mean", "Qsoil2_mean", "Qsoil3_mean", "Qsoil4_mean")
 ClimVars2 = list("Tair_mean", "Tair_mean", "Tair_mean", "Tair_mean")
 ###---------------- FUNCTIONS ---------------------------------------------------------
@@ -170,8 +171,8 @@ Fun_Plots <- function(Variables, RegionFiles, SoilLayers) {
   print("PRODUCING PLOTS OF VEGETATION MEMORY")
   print("++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++")
   source(paste(Dir.Codes, "SX_Plots.R", sep="/"))
-  Fun_Plot(Region = RegionFiles, SoilLayer = 1, Scaled = FALSE)
   Fun_Plot(Region = RegionFiles, SoilLayer = 1, Scaled = TRUE)
+  Fun_Plot(Region = RegionFiles, SoilLayer = 1, Scaled = FALSE)
   for(LoopReg in 1:length(unique(RegionFiles))){
     for(LoopSoil in SoilLayers){
       Fun_Plot(Region = RegionFiles[[LoopReg]], SoilLayer = SoilLayers[[LoopSoil]])
@@ -187,6 +188,16 @@ Fun_Plots <- function(Variables, RegionFiles, SoilLayers) {
 #                Extents = list(extent(-10,10,35,52), extent(-50,-34,-23,0), NULL),
 #                From = 1982, To = 2015, Lags = 0:12, Cores = 5)
 
-Fun_Plots(RegionFiles = list("Iberian Region", "Caatinga", "Australia"),
-          SoilLayers = c(1:4))
+Fun_Vegetation(Regions = list(c("Portugal", "Spain")),
+               RegionFiles = list("SWEurope"),
+               Extents = list(extent(-10,4.5,35,44)),
+               From = 1982, To = 2015, Lags = 0:12, Cores = 1)
+
+Fun_Vegetation(Regions = list(c("Global")),
+               RegionFiles = list("Sahel"),
+               Extents = list(extent(-17.55,0,5,15)),
+               From = 1982, To = 2015, Lags = 0:12, Cores = 2)
+
+# Fun_Plots(RegionFiles = list("Iberian Region", "Caatinga", "Australia"),
+#           SoilLayers = c(1:4))
 
