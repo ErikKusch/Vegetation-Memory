@@ -39,6 +39,13 @@ VegMem <- function(ClimVar, ClimVar2, Region, Cumlags, FromY, ToY){
   ModelEval_ras <- NDVI_ras[[1:10]] # select six raster layers
   # put names on the layers to tell us what they contain later
   ModelEval_ras <- Fun_NamesRas(raster = ModelEval_ras, ClimVar = ClimVar, ClimVar2 = ClimVar2)
+  # overview data frame
+  Overview_df <- data.frame(Pixel= NA,
+                            AR1 = NA,
+                            C1 = NA,
+                            LagC1 = NA,
+                            C2 = NA,
+                            AIC = NA)
   # MODELS----
   for(pixel in Data_Pos){ # loop non-NA pixels
     T_Begin <- Sys.time() # note time when calculation is started (needed for estimation of remaining time)
@@ -144,11 +151,15 @@ VegMem <- function(ClimVar, ClimVar2, Region, Cumlags, FromY, ToY){
       }else{ # if model is not an improvement over null, set p to 1
         ps[counter+1] <- 1}
       Mods_ls[[counter+1]] <- Mod # save model to list of models
+      # save data to Overview_df
+      Overview_df <- rbind(Overview_df, 
+                           c(Data_Pos[pixel], sum(t1newCof), sum(CnewCof), counter, sum(C2newCof), AIC(Mod))
+                           )
       counter <- counter + 1 }
     ### Selecting best model -----
     AICs <- sapply(X = Mods_ls, FUN = AIC) # calculate AICs for each model
-    # Best <- which(abs(AICs) == min(abs(AICs), na.rm = TRUE))[1] # best model, if same value present use first
-    Best <- which(abs(coeffsC) == max(abs(coeffsC)))[1] # select fro strongest soil memory effect
+    Best <- which(abs(AICs) == min(abs(AICs), na.rm = TRUE))[1] # best model, if same value present use first
+    # Best <- which(abs(coeffsC) == max(abs(coeffsC)))[1] # select fro strongest soil memory effect
     c_NDVI <- coeffst1[Best] # ndvi coefficient
     c_Clim <- coeffsC[Best] # climate coefficient
     c_Clim2 <- coeffsC2[Best] # climate 2 coefficient
@@ -185,7 +196,10 @@ VegMem <- function(ClimVar, ClimVar2, Region, Cumlags, FromY, ToY){
       pbi <- 0}
     pbi <- pbi + 1 ## Update progress bar
     setTxtProgressBar(pb, pbi)} # end of pixel loop
-  ### Save raster ----- 
+  ### Save data ----- 
+  Overview_df <- Overview_df[-1,]
+  saveRDS(Overview_df, file = paste(Dir.Memory,"/", Region, "_", ClimVar2, "-", ClimVar, 
+                                    paste(Cumlags, collapse="_"),"_",FromY,"-", ToY, ".RDS",sep=""))
   writeRaster(ModelEval_ras, filename = paste(Dir.Memory,"/", Region, "_", ClimVar2, "-", ClimVar, 
                                               paste(Cumlags, collapse="_"),"_",FromY,"-", ToY, ".nc",sep=""),
               overwrite=TRUE, format="CDF")
