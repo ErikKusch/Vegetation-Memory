@@ -197,12 +197,12 @@ VegMem <- function(ClimVar, ClimVar2, Region, Cumlags, FromY, ToY){
     pbi <- pbi + 1 ## Update progress bar
     setTxtProgressBar(pb, pbi)} # end of pixel loop
   ### Save data ----- 
-  Overview_df <- Overview_df[-1,]
-  saveRDS(Overview_df, file = paste(Dir.Memory,"/", Region, "_", ClimVar2, "-", ClimVar, 
-                                    paste(Cumlags, collapse="_"),"_",FromY,"-", ToY, ".RDS",sep=""))
   writeRaster(ModelEval_ras, filename = paste(Dir.Memory,"/", Region, "_", ClimVar2, "-", ClimVar, 
                                               paste(Cumlags, collapse="_"),"_",FromY,"-", ToY, ".nc",sep=""),
               overwrite=TRUE, format="CDF")
+  Overview_df <- Overview_df[-1,]
+  saveRDS(Overview_df, file = paste(Dir.Memory,"/", Region, "_", ClimVar2, "-", ClimVar, 
+                                    paste(Cumlags, collapse="_"),"_",FromY,"-", ToY, ".RDS",sep=""))
   setwd(mainDir)}# end of VegMem function 
 
 ####--------------- CoeffScaling [ClimVar, ClimVar2, Region, Cumlags, FromY, ToY, UAbs] 
