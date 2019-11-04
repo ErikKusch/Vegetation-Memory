@@ -35,8 +35,10 @@ Fun_Plot <- function(Region, SoilLayer = 1, Scaled = FALSE){
   ####--------------- PLOTTING ----------------
   ##------- MEMORY COMPONENTS -------
   ## Plotting Setup
-  col.signeg <- got(n = 100, alpha = 1, begin = 0, end = 1, direction = -1, option = "targaryen2")
-  col.sigpos <- got(n = 100, alpha = 1, begin = 0, end = 1, direction = -1, option = "tyrell")
+  # col.signeg <- got(n = 100, alpha = 1, begin = 0, end = 1, direction = -1, option = "targaryen2")
+  # col.sigpos <- got(n = 100, alpha = 1, begin = 0, end = 1, direction = -1, option = "tyrell")
+  col.signeg <- heat.colors(100)
+  col.sigpos <- rev(viridis(100))
   col.nonsig <- colorRampPalette(c("grey"))(1)
   col.lags <- got(n = 12, alpha = 1, begin = 0, end = 1, direction = 1, option = "daenerys")
   ##------- TRICOLOUR -------
@@ -154,11 +156,23 @@ Fun_Plot <- function(Region, SoilLayer = 1, Scaled = FALSE){
   
   ##------- VARIANCE PARTITIONING -------
   ## Plotting Setup
-  col.varpar1 <- got(n = 100, alpha = 1, begin = 0.2, end = 1, direction = -1, option = "wildfire")
-  col.varpar2 <- got(n = 100, alpha = 1, begin = 0.2, end = 1, direction = -1, option = "targaryen")
-  col.varpar3 <- got(n = 100, alpha = 1, begin = 0.2, end = 1, direction = -1, option = "jon_snow")
-  col.list <- list(col.varpar1, col.varpar2, col.varpar3) 
+  # col.varpar1 <- got(n = 100, alpha = 1, begin = 0.2, end = 1, direction = -1, option = "wildfire")[30]
+  # col.varpar2 <- got(n = 100, alpha = 1, begin = 0.2, end = 1, direction = -1, option = "targaryen")[50]
+  # col.varpar3 <- got(n = 100, alpha = 1, begin = 0.2, end = 1, direction = -1, option = "jon_snow")[1]
+  # col.list <- list(col.varpar1, col.varpar2, col.varpar3) 
+  col.list <- as.list(viridis(1000)[c(1, 500, 1000)])
+  
   ## Data
+  MaxVar <- rep(NA, length(Region))
+  for(plot in 1:length(Region)){
+    Alter_ras <- Rasters[[plot]][[7:10]]
+    Alter_ras[2] <- 0
+    values(Alter_ras)[which(values(Alter_ras) < 0)] <- 0
+    cells <- order(values(Alter_ras[[1]]))
+    `%nin%` = Negate(`%in%`) # create a 'not in' statement
+    cells <- cells[which(cells %nin% which(values(Alter_ras[[1]])>quantile(values(Alter_ras[[1]]), .95, na.rm = TRUE)))]
+    MaxVar[plot] <- max(Alter_ras[cells], na.rm = TRUE)
+  }
   VarPars <- list()
   for(plot in 1:length(Region)){
     Alter_ras <- Rasters[[plot]][[7:10]]
@@ -180,26 +194,32 @@ Fun_Plot <- function(Region, SoilLayer = 1, Scaled = FALSE){
     Lims <- c(0, max(plot_df$Data, na.rm = TRUE))
     plot_df <- na.omit(plot_df)
     if(length(Region) == 1){
-      p <- ggplot(data = plot_df, aes(y = Data, x = Cell, fill = Variance)) + geom_bar(stat = "identity") + theme_bw(base_size= 25) + xlab("Raster Cells") + ylab("Variance") + scale_fill_manual(values=c(col.list[[3]][1], col.list[[2]][50], col.list[[1]][30])) + ylim(Lims)
+      p <- ggplot(data = plot_df, aes(y = Data, x = Cell, fill = Variance)) + geom_bar(stat = "identity") + theme_bw(base_size= 25) + xlab("Raster Cells") + ylab("Variance") + scale_fill_manual(values=c(col.list[[3]], col.list[[2]], col.list[[1]])) + ylim(Lims)
     }else{
-      p <- ggplot(data = plot_df, aes(y = Data, x = Cell, fill = Variance)) + geom_bar(stat = "identity") + theme_bw(base_size= 25) + scale_fill_manual(values=c(col.list[[3]][1], col.list[[2]][50], col.list[[1]][30])) + ylim(Lims) + xlab("Raster Cells") + ylab("Variance") + ggtitle(Region[plot])
+      if(Scaled == TRUE){
+        p <- ggplot(data = plot_df, aes(y = Data, x = Cell, fill = Variance)) + geom_bar(stat = "identity") + theme_bw(base_size= 25) + scale_fill_manual(values=c(col.list[[3]], col.list[[2]], col.list[[1]])) + ylim(Lims) + xlab("Raster Cells") + ylab("Variance") + ggtitle(Region[plot]) + scale_y_continuous(limits = c(0, max(MaxVar)))
+      }else{
+        p <- ggplot(data = plot_df, aes(y = Data, x = Cell, fill = Variance)) + geom_bar(stat = "identity") + theme_bw(base_size= 25) + scale_fill_manual(values=c(col.list[[3]], col.list[[2]], col.list[[1]])) + ylim(Lims) + xlab("Raster Cells") + ylab("Variance") + ggtitle(Region[plot])
+      }
+      
     }
     VarPars[[plot]] <- p
   }
   ## Saving Files
   if(length(Region) ==1){
-    jpeg(file=paste(Dir.Plots, "/", paste(Region,collapse=""), "_VarPar", SoilLayer, ".jpeg", sep = ""), width = 32, height = 22, units = "cm", quality = 100, res = 100)
+    jpeg(file=paste(Dir.Plots, "/", paste(Region,collapse=""), "_VarPar", SoilLayer, "_", Scaled, ".jpeg", sep = ""), width = 32, height = 22, units = "cm", quality = 100, res = 100)
     print(VarPars[[1]])
     dev.off()
   }else{
     height <- 22*round(length(Region)/2)
     width <- 42
-    jpeg(file=paste(Dir.Plots, "/", paste(Region,collapse=""), "_VarPar", SoilLayer, ".jpeg", sep = ""), width = width, height = height, units = "cm", quality = 100, res = 100)
+    jpeg(file=paste(Dir.Plots, "/", paste(Region,collapse=""), "_VarPar", SoilLayer, "_", Scaled, ".jpeg", sep = ""), width = width, height = height, units = "cm", quality = 100, res = 100)
     
     if(length(Region)==2){
-      ggarrange(VarPars[[1]], VarPars[[2]], ncol=2, 
+      p <- ggarrange(VarPars[[1]], VarPars[[2]], ncol=2, 
                 common.legend = TRUE, legend="bottom",
                 labels = "AUTO")
+      print(p)
       
     }
     if(length(Region)==3){
@@ -214,14 +234,20 @@ Fun_Plot <- function(Region, SoilLayer = 1, Scaled = FALSE){
                    bottom = textGrob("Raster Cells", rot = 0, vjust = 1))
     }
     if(length(Region)==4){
-      ggarrange(VarPars[[1]], VarPars[[2]], VarPars[[3]], VarPars[[4]], ncol=2, 
+      p <- ggarrange(VarPars[[1]], VarPars[[2]], VarPars[[3]], VarPars[[4]], ncol=2, nrow = 2, 
                 common.legend = TRUE, legend="bottom",
                 labels = "AUTO")
+      print(p)
     }
     dev.off()
   }
   
   # Maps
+  col.varpar1 <- got(n = 100, alpha = 1, begin = 0.2, end = 1, direction = -1, option = "wildfire")
+  col.varpar2 <- got(n = 100, alpha = 1, begin = 0.2, end = 1, direction = -1, option = "targaryen")
+  col.varpar3 <- got(n = 100, alpha = 1, begin = 0.2, end = 1, direction = -1, option = "jon_snow")
+  col.list <- list(col.varpar1, col.varpar2, col.varpar3)
+  
   for(plot in 1:length(Region)){
   jpeg(file=paste(Dir.Plots, "/", Region[plot], "_VarParMap", SoilLayer, ".jpeg", sep = ""), width = 32, height = 22, units = "cm", quality = 100, res = 1000)
   par(mfrow=c(2,2))
@@ -232,7 +258,7 @@ Fun_Plot <- function(Region, SoilLayer = 1, Scaled = FALSE){
     col.varpar <- col.list[[i-1]]
     plot(Alter_ras[[i]], col=col.varpar, colNA = "black", legend=FALSE, axes=FALSE, main = Titles[i-1])
     plot(Alter_ras[[i]], legend.only=TRUE, col=col.varpar, smallplot=c(.05, .93, .15, .185), horizontal = TRUE, axis.args=list(cex.axis=2.5))
-  } 
+  }
   dev.off()
   }
 } # end of Fun_Plot
