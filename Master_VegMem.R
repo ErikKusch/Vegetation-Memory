@@ -6,8 +6,7 @@ source("Y - Codes/S0b_Directories.R") # setting directories
 ####--------------- FUNCTIONS ----
 source("Y - Codes/S0c_Functions.R") # Loading miscellaneous functions
 ####--------------- VARIABLE VECTORS ----
-ModVars <- c("Tair", "Qsoil1")
-# ModVars <- c("Tair", "Qsoil1", "Qsoil2", "Qsoil3", "Qsoil4")
+ModVars <- c("Tair", "Qsoil1", "Qsoil2", "Qsoil3", "Qsoil4")
 ClimVars = list("Qsoil1_mean", "Qsoil2_mean", "Qsoil3_mean", "Qsoil4_mean")
 ClimVars2 = list("Tair_mean", "Tair_mean", "Tair_mean", "Tair_mean")
 ###---------------- FUNCTIONS ---------------------------------------------------------
@@ -183,21 +182,33 @@ Fun_Plots <- function(Variables, RegionFiles, SoilLayers) {
 
 ####--------------- FUNCTION CALLS ----
 ## UNITED STATES STILL MISSING HERE
-# Fun_Vegetation(Regions = list(c("Portugal", "Spain", "France", "Andorra"), "Brazil", "Australia"),
-#                RegionFiles = list("Iberian Region", "Caatinga", "Australia"),
-#                Extents = list(extent(-10,10,35,52), extent(-50,-34,-23,0), NULL),
+# Fun_Vegetation(Regions = list(c("Portugal", "Spain"),"Brazil", "Australia", "Global"),
+#                RegionFiles = list("SWEurope", "Caatinga", "Australia", "Sahel"),
+#                Extents = list(extent(-10,4.5,35,44), extent(-50,-34,-23,0), NULL, extent(-17.55,0,5,15)),
 #                From = 1982, To = 2015, Lags = 0:12, Cores = 5)
+# Fun_Vegetation(Regions = list(c("Portugal", "Spain")),
+#                RegionFiles = list("SWEurope"),
+#                Extents = list(extent(-10,4.5,35,44)),
+#                From = 1982, To = 2015, Lags = 0:12, Cores = 1)
+# Fun_Vegetation(Regions = list(c("Global")),
+#                RegionFiles = list("SahelBig"),
+#                Extents = list(extent(-17.55,10,4,18)),
+#                From = 1982, To = 2015, Lags = 0:12, Cores = 1)
 
-Fun_Vegetation(Regions = list(c("Portugal", "Spain")),
-               RegionFiles = list("SWEurope"),
-               Extents = list(extent(-10,4.5,35,44)),
+# Fun_Plots(RegionFiles = list("SWEurope", "Caatinga", "Australia", "Sahel"),
+#           SoilLayers = c(1))
+
+setwd(Dir.Mask)
+Drylands <- shapefile("dryland_2")
+Extents <- list()
+for(i in 0:floor((abs(extent(Drylands)[4])+abs(extent(Drylands)[3]))/10)){
+  Extents[[i+1]] <- extent(extent(Drylands)[1], extent(Drylands)[2],
+                                        extent(Drylands)[4]-10*(i+1),
+                                        extent(Drylands)[4]-10*i)
+}
+setwd(mainDir)
+
+Fun_Vegetation(Regions = as.list(rep("Drylands", length(Extents))),
+               RegionFiles = as.list(paste("Drylands_", 1:length(Extents), sep="")),
+               Extents = Extents,
                From = 1982, To = 2015, Lags = 0:12, Cores = 1)
-
-Fun_Vegetation(Regions = list(c("Global")),
-               RegionFiles = list("Sahel"),
-               Extents = list(extent(-17.55,0,5,15)),
-               From = 1982, To = 2015, Lags = 0:12, Cores = 2)
-
-# Fun_Plots(RegionFiles = list("Iberian Region", "Caatinga", "Australia"),
-#           SoilLayers = c(1:4))
-

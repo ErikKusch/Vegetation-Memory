@@ -30,11 +30,15 @@ CombineCDFs <- function(Region, RegionFile, Extent){
   files <- list.files(Dir.Gimms.Monthly)
   files.pos <- grep("GlobalNDVI", files)
   # REGION SELECTION----
-  Shapes <- readOGR(Dir.Mask,'ne_50m_admin_0_countries', verbose = FALSE)
   RegObj <- RegionSelection(Region = Region, RegionFile = RegionFile, Extent = Extent)
   area <- RegObj[[1]]
   location <- RegObj[[2]]
   RegionFile <- RegObj[[3]]
+  if(Region == "Drylands"){
+    Shapes <- shapefile(paste(Dir.Mask, "/dryland_2.shp", sep=""))
+  }else{
+    Shapes <- readOGR(Dir.Mask,'ne_50m_admin_0_countries', verbose = FALSE)
+  }
   # LOADING, CROPPING AND MASKING----
   setwd(Dir.Gimms.Monthly)
   ras <- list()
