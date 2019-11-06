@@ -21,14 +21,7 @@ RasterEra5 <- function(Variable, Region, RegionFile, Extent, FromY, FromM, ToY, 
   print(paste("Kriging ERA5 ", VariablesNames_vec[VarPos], " data from ", FromM, "/", FromY, " to ", ToM, "/", ToY,
               " across ", RegionFile, sep=""))
   # FORMULAE VECTORS----
-  Krig_formula <- "ERA5 ~ Slopes1+Slopes2+Slopes3+Slopes4+Slopes5+Slopes6+Slopes7+Slopes8+Slope_aspect_N+
-  Slope_aspect_E+Slope_aspect_S+Slope_aspect_W+Slope_aspect_U+Elevation+
-  Slopes1:Slope_aspect_N+Slopes2:Slope_aspect_N+Slopes3:Slope_aspect_N+
-  Slopes4:Slope_aspect_N+Slopes5:Slope_aspect_N+Slopes6:Slope_aspect_N+
-  Slopes7:Slope_aspect_N+Slopes8:Slope_aspect_N+Slopes1:Slope_aspect_S+
-  Slopes2:Slope_aspect_S+Slopes3:Slope_aspect_S+Slopes4:Slope_aspect_S+
-  Slopes5:Slope_aspect_S+Slopes6:Slope_aspect_S+Slopes7:Slope_aspect_S+
-  Slopes8:Slope_aspect_S"
+  Krig_formula <- "ERA5~Slopes1+Slopes2+Slopes3+Slopes4+Slopes5+Slopes6+Slopes7+Slopes8+Slope_aspect_N+Slope_aspect_E+Slope_aspect_S+Slope_aspect_W+Slope_aspect_U+Elevation+Slopes1:Slope_aspect_N+Slopes2:Slope_aspect_N+Slopes3:Slope_aspect_N+Slopes4:Slope_aspect_N+Slopes5:Slope_aspect_N+Slopes6:Slope_aspect_N+Slopes7:Slope_aspect_N+Slopes8:Slope_aspect_N+Slopes1:Slope_aspect_S+Slopes2:Slope_aspect_S+Slopes3:Slope_aspect_S+Slopes4:Slope_aspect_S+Slopes5:Slope_aspect_S+Slopes6:Slope_aspect_S+Slopes7:Slope_aspect_S+Slopes8:Slope_aspect_S"
   # LOAD DATA----
   ## Era5 data
   FirstMonth <- which(YearVec == FromY)[FromM] # first month to consider
@@ -55,11 +48,8 @@ RasterEra5 <- function(Variable, Region, RegionFile, Extent, FromY, FromM, ToY, 
   area <- RegObj[[1]]
   location <- RegObj[[2]]
   RegionFile <- RegObj[[3]]
-  if(Region == "Drylands"){
-    Shapes <- shapefile(paste(Dir.Mask, "/dryland_2.shp", sep=""))
-  }else{
-    Shapes <- readOGR(Dir.Mask,'ne_50m_admin_0_countries', verbose = FALSE)
-  }
+  Shapes <- RegObj[[4]]
+  plot(Shapes[location,], main = "Shapes")
   # CROPPING AND MASKING----
   ## Era5 cropping and masking
   ras <- crop(ras, area) # cropping to extent
@@ -67,9 +57,11 @@ RasterEra5 <- function(Variable, Region, RegionFile, Extent, FromY, FromM, ToY, 
   ## Coarse covariate cropping and masking
   Cov_coarse <- crop(Cov_coarse, area) # cropping to extent
   Cov_coarse <- mask(Cov_coarse, Shapes[location,]) # masking via Shapefile
+  plot(Cov_coarse[[14]], main = "Coarse")
   ## Fine covariate cropping and masking
   Cov_fine <- crop(Cov_fine, area) # cropping to extent
   Cov_fine <- mask(Cov_fine, Shapes[location,]) # masking via Shapefile
+  plot(Cov_fine[[14]], main = "Fine")
   # KRIGING----
   Months1 <- (ToY-FromY-1)*12 # how many months to cover just by years
   Months2 <- abs(ToM-FromM+1) # how many months to cover only taking months of time frame into account
@@ -101,6 +93,39 @@ RasterEra5 <- function(Variable, Region, RegionFile, Extent, FromY, FromM, ToY, 
     TempStop <- which(TempNames == paste(ToY,"_",ToM, sep=""))}
   TempNames <- TempNames[TempStart:TempStop]
   Ras_Krig <- list()
+  ## CHecking data and formula
+  RasterX <- ras[[1]]# extracting raster from Era5 stack
+  # Base and Covariate Coarse Data
+  Origin <- as.data.frame(RasterX, xy = TRUE)
+  Origin <- na.omit(Origin)
+  for(c in 1:length(Covariates_vec)){
+    Cov_coarse[[c]][!is.na(RasterX) & is.na(Cov_coarse[[c]])] <- 0 # 0 cells where no info
+    Cov_coarse[[c]][is.na(RasterX)] <- NA # ensure same NAs
+    Covariate <- as.data.frame(Cov_coarse[[c]], xy = TRUE)
+    Covariate <- na.omit(Covariate)
+    Origin <- cbind(Origin, Covariate[,3])}
+  colnames(Origin) <- c("x","y", "ERA5", Covariates_vec)
+  # checking data availability, only checking for names contained in kriging formula
+  Split <- strsplit(x = Krig_formula, split = ":", fixed = TRUE)
+  Split <- unlist(strsplit(x = unlist(Split), split = "+", fixed = TRUE))
+  Split <- unlist(strsplit(x = unlist(Split), split = "~", fixed = TRUE))
+  Fails <- NA
+  counter <- 1
+  for(it_check in (which(Covariates_vec %in% unique(Split[-1]))+3)){
+    if(length(which(Origin[,it_check] != 0)) < 2){
+      Fails[counter] <- TRUE
+    }else{
+        Fails[counter] <- FALSE
+    }
+    counter <- counter + 1
+  }
+  if(length(colnames(Origin)[which(Fails == TRUE)]) == length(Variables_vec)){
+    stop(print("There is not data present in this area. Breaking the operation."))
+  }
+  if(sum(Fails) > 0){
+    Krig_formula = paste("ERA5~", paste(colnames(Origin)[which(Fails == FALSE)+3], collapse = "+"), sep="")
+    print(paste("The native resolution data does not support kriging using the formula you have specified because ", paste(colnames(Origin)[which(Fails == TRUE)+3], collapse = ", "), " do(es) not contain enough data records for kriging to be performed across the region you have specified (", RegionFile, ").", " You can resolve this issue by either removing the interaction effects containing this variable from the formula or choosing a bigger study region. Using the following, linear combination of covraites with enough data for computation instead: ", Krig_formula, sep=""))
+  }
   ### Actual Kriging
   counter <- 0
   for(i in 1:length(names(ras))){
@@ -121,14 +146,6 @@ RasterEra5 <- function(Variable, Region, RegionFile, Extent, FromY, FromM, ToY, 
       Covariate <- na.omit(Covariate)
       Origin <- cbind(Origin, Covariate[,3])}
     colnames(Origin) <- c("x","y", "ERA5", Covariates_vec)
-    # checking data availability
-    for(it_check in 1:length(colnames(Origin))){
-      if(length(which(Origin[,it_check] != 0)) < 2){
-        stop(paste("The native resolution data does not support kriging using the formula you have specified
-                   because ", colnames(Origin)[it_check], " does not contain enough data records for kriging
-                   to be performed across the region you have specified (", Region, ").", " You can resolve
-                   this issue by either removing the interaction effects containing this variable from the
-                   formula or choosing a bigger study region.", sep=""))}}
     OriginK <- Origin
     gridded(OriginK) <- ~x+y
     # CROPPING TARGET

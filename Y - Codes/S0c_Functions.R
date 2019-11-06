@@ -5,7 +5,6 @@ RegionSelection <- function(Region, RegionFile, Extent) {
   Shapes <- readOGR(Dir.Mask, "ne_50m_admin_0_countries", verbose = FALSE)
   ## selecting region from shapefile run global analysis read user-defined extent
   ## (if applicable)
-  
   if(Region == "Drylands"){
     Shapes <- shapefile(paste(Dir.Mask, "/dryland_2.shp", sep=""))
     Shapes <- crop(Shapes, Extent)
@@ -40,7 +39,7 @@ RegionSelection <- function(Region, RegionFile, Extent) {
   }
   
   # returning parameters
-  return(list(area, location, RegionFile))
+  return(list(area, location, RegionFile, Shapes))
 }
 
 ### Fun_NamesRas [raster, ClimVar, ClimVar2]

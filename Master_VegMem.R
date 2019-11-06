@@ -6,7 +6,8 @@ source("Y - Codes/S0b_Directories.R") # setting directories
 ####--------------- FUNCTIONS ----
 source("Y - Codes/S0c_Functions.R") # Loading miscellaneous functions
 ####--------------- VARIABLE VECTORS ----
-ModVars <- c("Tair", "Qsoil1", "Qsoil2", "Qsoil3", "Qsoil4")
+ModVars <- c("Tair")
+             # , "Qsoil1", "Qsoil2", "Qsoil3", "Qsoil4")
 ClimVars = list("Qsoil1_mean", "Qsoil2_mean", "Qsoil3_mean", "Qsoil4_mean")
 ClimVars2 = list("Tair_mean", "Tair_mean", "Tair_mean", "Tair_mean")
 ###---------------- FUNCTIONS ---------------------------------------------------------
@@ -207,8 +208,9 @@ for(i in 0:floor((abs(extent(Drylands)[4])+abs(extent(Drylands)[3]))/10)){
                                         extent(Drylands)[4]-10*i)
 }
 setwd(mainDir)
+# Extents <- Extents[c(-5:-8)]
 
 Fun_Vegetation(Regions = as.list(rep("Drylands", length(Extents))),
                RegionFiles = as.list(paste("Drylands_", 1:length(Extents), sep="")),
                Extents = Extents,
-               From = 1982, To = 2015, Lags = 0:12, Cores = 1)
+               From = 1982, To = 1982, Lags = 0:12, Cores = 1)
