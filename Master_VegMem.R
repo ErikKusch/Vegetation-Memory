@@ -182,35 +182,11 @@ Fun_Plots <- function(Variables, RegionFiles, SoilLayers) {
 } # Fun_Plots
 
 ####--------------- FUNCTION CALLS ----
-## UNITED STATES STILL MISSING HERE
 # Fun_Vegetation(Regions = list(c("Portugal", "Spain"),"Brazil", "Australia", "Global"),
-#                RegionFiles = list("SWEurope", "Caatinga", "Australia", "Sahel"),
-#                Extents = list(extent(-10,4.5,35,44), extent(-50,-34,-23,0), NULL, extent(-17.55,0,5,15)),
+#                RegionFiles = list("SWEurope", "Caatinga", "Australia", "SahelBig"),
+#                Extents = list(extent(-10,4.5,35,44), extent(-50,-34,-23,0), NULL, extent(-17.55,10,4,18)),
 #                From = 1982, To = 2015, Lags = 0:12, Cores = 5)
-# Fun_Vegetation(Regions = list(c("Portugal", "Spain")),
-#                RegionFiles = list("SWEurope"),
-#                Extents = list(extent(-10,4.5,35,44)),
-#                From = 1982, To = 2015, Lags = 0:12, Cores = 1)
-# Fun_Vegetation(Regions = list(c("Global")),
-#                RegionFiles = list("SahelBig"),
-#                Extents = list(extent(-17.55,10,4,18)),
-#                From = 1982, To = 2015, Lags = 0:12, Cores = 1)
 
-# Fun_Plots(RegionFiles = list("SWEurope", "Caatinga", "Australia", "Sahel"),
-#           SoilLayers = c(1))
 
-setwd(Dir.Mask)
-Drylands <- shapefile("dryland_2")
-Extents <- list()
-for(i in 0:floor((abs(extent(Drylands)[4])+abs(extent(Drylands)[3]))/10)){
-  Extents[[i+1]] <- extent(extent(Drylands)[1], extent(Drylands)[2],
-                                        extent(Drylands)[4]-10*(i+1),
-                                        extent(Drylands)[4]-10*i)
-}
-setwd(mainDir)
-# Extents <- Extents[c(-5:-8)]
 
-Fun_Vegetation(Regions = as.list(rep("Drylands", length(Extents))),
-               RegionFiles = as.list(paste("Drylands_", 1:length(Extents), sep="")),
-               Extents = Extents,
-               From = 1982, To = 1982, Lags = 0:12, Cores = 1)
+Fun_Plots(RegionFiles = list("SWEurope", "Caatinga", "Australia", "Contiguous US"), SoilLayers = c(1))
