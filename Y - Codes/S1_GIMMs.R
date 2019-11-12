@@ -34,11 +34,8 @@ CombineCDFs <- function(Region, RegionFile, Extent){
   area <- RegObj[[1]]
   location <- RegObj[[2]]
   RegionFile <- RegObj[[3]]
-  if(Region == "Drylands"){
-    Shapes <- shapefile(paste(Dir.Mask, "/dryland_2.shp", sep=""))
-  }else{
-    Shapes <- readOGR(Dir.Mask,'ne_50m_admin_0_countries', verbose = FALSE)
-  }
+  Shapes <- RegObj[[4]]
+  plot(Shapes[location,], main = "Shapes")
   # LOADING, CROPPING AND MASKING----
   setwd(Dir.Gimms.Monthly)
   ras <- list()
