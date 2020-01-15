@@ -14,7 +14,6 @@ ClimVars2 = list("Tair_mean", "Tair_mean", "Tair_mean", "Tair_mean")
 ####--------------- Fun_Vegetation [Regions, RegionFiles, Extents, From, To, Lags, Cores]
 # (selecting and preparing data, and calculating vegetation memory) ----
 
-
 ####--------------- FUNCTION CALLS ----
 GlobalDrylands <- function(numberOfCores = 4){
   
