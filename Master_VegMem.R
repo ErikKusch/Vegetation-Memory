@@ -189,4 +189,4 @@ Fun_Plots <- function(Variables, RegionFiles, SoilLayers) {
 
 
 
-Fun_Plots(RegionFiles = list("SWEurope", "Caatinga", "Australia", "Contiguous US"), SoilLayers = c(1))
+Fun_Plots(RegionFiles = list("SWEurope", "Caatinga", "Australia", "Contiguous US", "SahelBig"), SoilLayers = c(1))
