@@ -6,7 +6,7 @@ VariablesNames_vec <- c("Air Temperature", "Soil Moisture (0-7cm)", "Soil Moistu
 VegMem <- function(ClimVar, ClimVar2, Region, Cumlags, FromY, ToY){
   print("#################################################")
   print(paste("Identifying vegetation memory effects of NDVI based on antecedent NDVI and ", 
-              VariablesNames_vec[which(Variables_vec == ClimVar2)], " (immediate effects) and ", 
+              VariablesNames_vec[which(Variables_vec == ClimVar2)], ", and ", 
               VariablesNames_vec[which(Variables_vec == ClimVar)], " at lags: ", toString(Cumlags)," across ", 
               Region, sep=""))
   # LOAD DATA----
@@ -36,16 +36,9 @@ VegMem <- function(ClimVar, ClimVar2, Region, Cumlags, FromY, ToY){
   NATest_vec <- values(NATest_ras) # set values as vector
   Data_Pos <- which(!is.na(NATest_vec)) # select non-NA positions (these are the ones we should build models on)
   # PREPARE RASTERS----
-  ModelEval_ras <- NDVI_ras[[1:10]] # select six raster layers
+  ModelEval_ras <- NDVI_ras[[1:15]] # select 15 raster layers
   # put names on the layers to tell us what they contain later
   ModelEval_ras <- Fun_NamesRas(raster = ModelEval_ras, ClimVar = ClimVar, ClimVar2 = ClimVar2)
-  # overview data frame
-  Overview_df <- data.frame(Pixel= NA,
-                            AR1 = NA,
-                            C1 = NA,
-                            LagC1 = NA,
-                            C2 = NA,
-                            AIC = NA)
   # MODELS----
   for(pixel in Data_Pos){ # loop non-NA pixels
     T_Begin <- Sys.time() # note time when calculation is started (needed for estimation of remaining time)
@@ -95,37 +88,68 @@ VegMem <- function(ClimVar, ClimVar2, Region, Cumlags, FromY, ToY){
                              AnomalyCalc = ave(AnomalyCalc, Month, FUN=scale))
       # save to original data frame
       Clim_df[,anomaly] <- Clim_iter$AnomalyCalc}
+    ### Establishing models----
+    # list to save Model objects
+    Mods_ls <- as.list(rep(NA, length(Cumlags))) # List of models
+    for(ModelIter in Cumlags){ # go through all possible cumulative lags
+      Mod <- lm(NDVI_anom ~ Clim_df[,ModelIter+3]) # full model
+      Mods_ls[[ModelIter+1]] <- Mod # save model to list of models
+      }
+    ### Selecting best model -----
+    AICs <- sapply(X = Mods_ls, FUN = AIC) # calculate AICs for each model
+    BestC1 <- which(abs(AICs) == min(abs(AICs), na.rm = TRUE))[1] # best model, if same value present use first
     #### ClimVar2 ------
     Clim2_vec <- as.vector(Clim2_mean_ras[pixel]) # extract raw data for pixel (instantenous predictor)
     Clim2_vec <- detrend(Clim2_vec, tt = 'linear') # linear detrending
-    Clim2_df <- data.frame(Month = rep(1:12, length(Clim2_vec)/12), Clim2_raw = Clim2_vec)
+    # calculate cumulative climate indices (antecedent predictor)
+    Clim2_cum <- rep(NA, length(Cumlags))
+    Clim2_cum <- as.list(Cumlags)
+    position <- 1
+    for(lag in Cumlags){
+      for(i in 1:(length(Clim_vec)-lag)){
+        Clim2_cum[[position]] <- c(Clim2_cum[[position]], sum(Clim2_vec[i:(i+lag)]))}
+      Clim2_cum[[position]] <- Clim2_cum[[position]][-1] # removing initial NA
+      # adding enough NAs to bring it up to full length
+      Clim2_cum[[position]] <- c(Clim2_cum[[position]], rep(NA , length(Clim2_vec)-length(Clim2_cum[[position]])))
+      position <- position+1}
+    # make data frame of climate stuff
+    Clim2_df <- as.data.frame(Clim2_cum) # make list into data frame
+    Clim2_df <- cbind(rep(12:1, length(Clim2_vec)/12), Clim2_vec, Clim2_df) # append month index and raw data
+    colnames(Clim2_df) <- c("Month", "Clim2_raw", paste(rep("Clim2Cum_",length(Cumlags)),Cumlags, sep="")) # column names
     # calculate anomalies
-    Clim2_df <- transform(Clim2_df,
-                          Clim2_Anomalies = ave(Clim2_raw, Month, FUN=scale))
-    Clim2_df <- Clim2_df[nrow(Clim2_df):1,] # reverse order to read "present to past"
-    Clim2_anom <- Clim2_df$Clim2_Anomalies
+    for(anomaly in 2:length(Clim2_df)){# cycle through all the columns of the climate data frame except the month column
+      Clim2_iter <- with(Clim2_df, cbind(Month, Clim2_df[,anomaly])) # extract necessary data
+      colnames(Clim2_iter) <- c("Month", "AnomalyCalc") # set column names
+      Clim2_iter <- transform(Clim2_iter, # calculate anomaly for each month
+                             AnomalyCalc = ave(AnomalyCalc, Month, FUN=scale))
+      # save to original data frame
+      Clim2_df[,anomaly] <- Clim2_iter$AnomalyCalc}
+    ### Establishing models----
+    # list to save Model objects
+    Mods_ls2 <- as.list(rep(NA, length(Cumlags))) # List of models
+    for(ModelIter in Cumlags){ # go through all possible cumulative lags
+      Mod <- lm(NDVI_anom ~ Clim2_df[,ModelIter+3]) # full model
+      Mods_ls2[[ModelIter+1]] <- Mod # save model to list of models
+    }
+    ### Selecting best model -----
+    AICs2 <- sapply(X = Mods_ls2, FUN = AIC) # calculate AICs for each model
+    BestC2 <- which(abs(AICs2) == min(abs(AICs2), na.rm = TRUE))[1] # best model, if same value present use first
     ### Combining all the data -----
-    ModData_df <- cbind(NDVI_anom[1:length(Clim2_anom)], NDVI_Lag1[1:length(Clim2_anom)], Clim_df, Clim2_anom)
+    ModData_df <- data.frame(NDVI_anom = NDVI_anom[1:length(Clim2_anom)], 
+                             NDVI_Lag1 = NDVI_Lag1[1:length(Clim2_anom)], 
+                             C1 = Clim_df[,BestC1+2], 
+                             C2 = Clim2_df[,BestC2+2])
     if(length(ThreshPos) > 0){ # set threshold months to NA if necessary
       ModData_df$NDVI_anom[ThreshPos] <- NA}
     ModData_df <- na.omit(ModData_df) # get rid of NA rows
     if(dim(ModData_df)[1] == 0){ # if there are no anomalies
-      ModelEval_ras[pixel] <- c(NA, NA, NA, NA, NA, NA, NA, NA, NA, NA)
+      ModelEval_ras[pixel] <- c(NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA)
       next()
     }
     ## MODELS ----
     ### Establishing models----
-    # list to save Model objects
-    Mods_ls <- as.list(rep(NA, length(Cumlags))) # List of models
-    ps <- rep(NA, length(Cumlags)) # p-values
-    coeffst1 <- rep(NA, length(Cumlags)) # coefficients of NDVI-1
-    coeffsC <- rep(NA, length(Cumlags)) # coefficients of ClimVar
-    coeffsC2 <- rep(NA, length(Cumlags)) # coefficients of ClimVar2
-    # itterate over all climate lags
-    counter <- 0 # create a counter variable
-    for(ModelIter in Cumlags){ # go through all possible cumulative lags
       ## PCA of our variables
-      pca_mat <- matrix(cbind(ModData_df$NDVI_Lag1,ModData_df[, counter+4], ModData_df$Clim2_anom), 
+      pca_mat <- matrix(cbind(ModData_df$NDVI_Lag1,ModData_df$C1, ModData_df$C2), 
                         ncol = 3, byrow = FALSE, dimnames = list(1:length(ModData_df$NDVI_Lag1), 
                                                                  c("t-1", ClimVar, ClimVar2))) # pca matrix
       pca <- rda(pca_mat) # running pca
@@ -143,47 +167,40 @@ VegMem <- function(ClimVar, ClimVar2, Region, Cumlags, FromY, ToY){
       CnewCof <- loadings[2,] * coefficients
       C2newCof <- loadings[3,] * coefficients
       ## Saving information to vectors
-      coeffst1[counter+1] <- sum(t1newCof) # NDVI-1
-      coeffsC[counter + 1] <- sum(CnewCof) # ClimVar
-      coeffsC2[counter + 1] <- sum(C2newCof) # ClimVar2
+      coeffst1 <- sum(t1newCof) # NDVI-1
+      coeffsC <- sum(CnewCof) # ClimVar
+      coeffsC2 <- sum(C2newCof) # ClimVar2
       if(anova(Mod0, Mod)$RSS[1] > anova(Mod0, Mod)$RSS[2]){ # only save p value if model is an imporvement
-        ps[counter+1] <- anova(Mod0, Mod)$'Pr(>F)'[2] 
+        ps <- anova(Mod0, Mod)$'Pr(>F)'[2] 
       }else{ # if model is not an improvement over null, set p to 1
-        ps[counter+1] <- 1}
-      Mods_ls[[counter+1]] <- Mod # save model to list of models
-      # save data to Overview_df
-      Overview_df <- rbind(Overview_df, 
-                           c(Data_Pos[pixel], sum(t1newCof), sum(CnewCof), counter, sum(C2newCof), AIC(Mod))
-                           )
-      counter <- counter + 1 }
+        ps <- 1}
     ### Selecting best model -----
-    AICs <- sapply(X = Mods_ls, FUN = AIC) # calculate AICs for each model
-    Best <- which(abs(AICs) == min(abs(AICs), na.rm = TRUE))[1] # best model, if same value present use first
     # Best <- which(abs(coeffsC) == max(abs(coeffsC)))[1] # select fro strongest soil memory effect
-    c_NDVI <- coeffst1[Best] # ndvi coefficient
-    c_Clim <- coeffsC[Best] # climate coefficient
-    c_Clim2 <- coeffsC2[Best] # climate 2 coefficient
-    p_Mod <- ps[Best] # p-value is set to p-value of best model
-    AICMod <- AICs[Best] # AIC is set to best AIC
-    Bestlag <- Cumlags[Best] # this is the lag at which best model was observed
+    c_NDVI <- coeffst1 # ndvi coefficient
+    c_Clim <- coeffsC # climate coefficient
+    c_Clim2 <- coeffsC2 # climate 2 coefficient
+    p_Mod <- ps # p-value is set to p-value of best model
+    AICMod <- AIC(Mod) # AIC is set to best AIC
+    BestlagC1 <- BestC1-1  # this is the lag at which best model was observed
+    BestlagC2 <- BestC2-1  # this is the lag at which best model was observed
+    
     ## EXPLAINED VARIANCE----
-    colnames(ModData_df)[c(1:2)] <- c("NDVI_anom", "NDVI_Lag1")
-    # Legendre & Legendre
-    Explainedvar <- lm(data = ModData_df,
-                       NDVI_anom ~ NDVI_Lag1 + ModData_df[,Best+5])
-    Explainedvar <- summary(Explainedvar)[["r.squared"]]
-    VarTotalNDVI <- lm(data = ModData_df,
-                       NDVI_anom ~ NDVI_Lag1)
-    VarTotalNDVI <- summary(VarTotalNDVI)[["r.squared"]]
-    VarTotalQsoil <- lm(data = ModData_df,
-                        NDVI_anom ~ ModData_df[,Best+5])
-    VarTotalQsoil <- summary(VarTotalQsoil)[["r.squared"]]
-    VarShared <- VarTotalQsoil + VarTotalNDVI - Explainedvar
-    VarNDVI <- VarTotalNDVI - VarShared
-    VarQsoil <- VarTotalQsoil - VarShared
+    varpar <- with(ModData_df, varpart(NDVI_anom, NDVI_Lag1, C1, C2))
+    Explainedvar <- 1 - varpar$part$indfract[dim(varpar$part$indfract)[1],3]
+    VarNDVI <- varpar$part$indfract[1,3]
+    VarQsoil <- varpar$part$indfract[2,3]
+    VarTair <- varpar$part$indfract[3,3]
+    VarNDVIQsoil <- varpar$part$indfract[4,3]
+    VarNDVITair <- varpar$part$indfract[6,3]
+    VarQsoilTair <- varpar$part$indfract[5,3] 
+    VarSharedAll <- varpar$part$indfract[7,3]
+    Vars <- c(Explainedvar, VarNDVI, VarQsoil, VarTair, 
+              VarNDVIQsoil, VarNDVITair, VarQsoilTair, VarSharedAll)
+    Vars[which(Vars < 0)] <- 0
+    
     ## WRITING INFORMATION TO RASTERS----
-    ModelEval_ras[pixel] <- as.numeric(c((Bestlag), AICMod, p_Mod, c_NDVI, c_Clim, c_Clim2, Explainedvar, 
-                                         VarNDVI, VarShared, VarQsoil)) # saving model information to raster
+    ModelEval_ras[pixel] <- as.numeric(c(AICMod, c_NDVI, c_Clim, BestlagC1, c_Clim2, BestlagC2, 
+                                         Vars, p_Mod)) # saving model information to raster
     ## Updating progress bar----
     if(pixel == Data_Pos[1]){ # if we are currently on the first pixel
       T_End <- Sys.time() # note end time
@@ -200,9 +217,6 @@ VegMem <- function(ClimVar, ClimVar2, Region, Cumlags, FromY, ToY){
   writeRaster(ModelEval_ras, filename = paste(Dir.Memory,"/", Region, "_", ClimVar2, "-", ClimVar, 
                                               paste(Cumlags, collapse="_"),"_",FromY,"-", ToY, ".nc",sep=""),
               overwrite=TRUE, format="CDF")
-  Overview_df <- Overview_df[-1,]
-  saveRDS(Overview_df, file = paste(Dir.Memory,"/", Region, "_", ClimVar2, "-", ClimVar, 
-                                    paste(Cumlags, collapse="_"),"_",FromY,"-", ToY, ".RDS",sep=""))
   setwd(mainDir)}# end of VegMem function 
 
 ####--------------- CoeffScaling [ClimVar, ClimVar2, Region, Cumlags, FromY, ToY, UAbs] 
