@@ -6,7 +6,8 @@ Fun_Plot <- function(Region, SoilLayer = 1, Scaled = FALSE){
   Rasters <- list()
   for(i in 1:length(Region)){
     Files <- list.files(Dir.Memory)[grep(pattern = Region[i], list.files(Dir.Memory))]
-    File <- Files[grep(pattern = paste("Qsoil", SoilLayer, sep=""), Files)]
+    Files <- Files[grep(pattern = paste("Qsoil", SoilLayer, sep=""), Files)]
+    File <- Files[grep(pattern = ".nc", Files)]
     Memory <- brick(paste(Dir.Memory,File, sep="/"))
     Rasters[[i]] <- Memory
   }
@@ -238,6 +239,19 @@ Fun_Plot <- function(Region, SoilLayer = 1, Scaled = FALSE){
                 common.legend = TRUE, legend="bottom",
                 labels = "AUTO")
       print(p)
+    }
+    if(length(Region)==5){
+      leg <- VarPars[[1]] + theme_bw(base_size = 15) + guides(fill = guide_legend(override.aes = list(size = 15)))
+      legend <- cowplot::get_legend(leg)
+      grid.arrange(VarPars[[1]]+ theme(legend.position = "none"),
+                   VarPars[[2]]+ theme(legend.position = "none"), 
+                   VarPars[[3]]+ theme(legend.position = "none"),
+                   VarPars[[4]]+ theme(legend.position = "none"),
+                   VarPars[[5]]+ theme(legend.position = "none"),
+                   legend, 
+                   ncol=2,
+                   left = textGrob("Explained Variance", rot = 90, vjust = 1),
+                   bottom = textGrob("Raster Cells", rot = 0, vjust = 1))
     }
     dev.off()
   }
