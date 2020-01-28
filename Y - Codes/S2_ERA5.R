@@ -124,7 +124,7 @@ RasterEra5 <- function(Variable, Region, RegionFile, Extent, FromY, FromM, ToY, 
   }
   if(sum(Fails) > 0){
     Krig_formula = paste("ERA5~", paste(colnames(Origin)[which(Fails == FALSE)+3], collapse = "+"), sep="")
-    print(paste("The native resolution data does not support kriging using the formula you have specified because ", paste(colnames(Origin)[which(Fails == TRUE)+3], collapse = ", "), " do(es) not contain enough data records for kriging to be performed across the region you have specified (", RegionFile, ").", " You can resolve this issue by either removing the interaction effects containing this variable from the formula or choosing a bigger study region. Using the following, linear combination of covraites with enough data for computation instead: ", Krig_formula, sep=""))
+    print(paste("The native resolution data does not support kriging using the formula you have specified because ", paste(colnames(Origin)[which(Fails == TRUE)+3], collapse = ", "), " do(es) not contain enough data records for kriging to be performed across the region you have specified (", RegionFile, ").", " You can resolve this issue by either removing the effects containing this variable from the formula or choosing a bigger study region. Using the following, linear combination of covariates with enough data for computation instead: ", Krig_formula, sep=""))
   }
   ### Actual Kriging
   counter <- 0
@@ -163,7 +163,7 @@ RasterEra5 <- function(Variable, Region, RegionFile, Extent, FromY, FromM, ToY, 
     # KRIGING
     invisible(capture.output(
       kriging_result <- autoKrige(
-        as.formula(Krig_formula),OriginK, TargetK, verbose = FALSE)))
+        as.formula(Krig_formula),OriginK, TargetK, verbose = TRUE)))
     Krig_ras <- raster(kriging_result$krige_output)
     Ras_Krig[[i]] <- Krig_ras
     # writing the raster
