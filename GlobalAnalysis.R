@@ -6,8 +6,7 @@ source("Y - Codes/S0b_Directories.R") # setting directories
 ####--------------- FUNCTIONS ----
 source("Y - Codes/S0c_Functions.R") # Loading miscellaneous functions
 ####--------------- VARIABLE VECTORS ----
-ModVars <- c("Tair")
-# , "Qsoil1", "Qsoil2", "Qsoil3", "Qsoil4")
+ModVars <- c("Tair", "Qsoil1")
 ClimVars = list("Qsoil1_mean", "Qsoil2_mean", "Qsoil3_mean", "Qsoil4_mean")
 ClimVars2 = list("Tair_mean", "Tair_mean", "Tair_mean", "Tair_mean")
 ###---------------- FUNCTIONS ---------------------------------------------------------
@@ -220,4 +219,4 @@ Fun_Plots <- function(Variables, RegionFiles, SoilLayers) {
 } # Fun_Plots
 
 ####--------------- FUNCTION CALLS ----
-GlobalDrylands(numberOfCores = 4)
+GlobalDrylands(numberOfCores = 1)
