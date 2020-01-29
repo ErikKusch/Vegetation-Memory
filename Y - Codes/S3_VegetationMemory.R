@@ -135,8 +135,8 @@ VegMem <- function(ClimVar, ClimVar2, Region, Cumlags, FromY, ToY){
     AICs2 <- sapply(X = Mods_ls2, FUN = AIC) # calculate AICs for each model
     BestC2 <- which(abs(AICs2) == min(abs(AICs2), na.rm = TRUE))[1] # best model, if same value present use first
     ### Combining all the data -----
-    ModData_df <- data.frame(NDVI_anom = NDVI_anom[1:length(Clim2_anom)], 
-                             NDVI_Lag1 = NDVI_Lag1[1:length(Clim2_anom)], 
+    ModData_df <- data.frame(NDVI_anom = NDVI_anom, 
+                             NDVI_Lag1 = NDVI_Lag1, 
                              C1 = Clim_df[,BestC1+2], 
                              C2 = Clim2_df[,BestC2+2])
     if(length(ThreshPos) > 0){ # set threshold months to NA if necessary
