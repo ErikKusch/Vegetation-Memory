@@ -435,6 +435,18 @@ Compare_df <- na.omit(Compare_df)
 ggplot(aes(x = Variable, y = AIC, col = Method), data = Compare_df) + 
   geom_boxplot() + theme_bw() + ggtitle("Feature Selection")
 
+Test_df <- Compare_df
+Test_df <- Test_df[which(Compare_df$Variable == "Tair"), ]
+
+kruskal.test(
+  c(Test_df$AIC[which(Test_df$Method == "Linear-Single")], 
+    Test_df$AIC[which(Test_df$Method == "Linear-Combined")],
+    Test_df$AIC[which(Test_df$Method == "PCA-Combined")]),
+  g = rep(c("Linear-Single", "Linear-Combined", "PCA-Combined"), 
+          each = length(Test_df$AIC[which(Test_df$Method == "Linear-Single")]))
+  )
+
+
 # Plot_df <- Compare_df
 # Plot_df <- Plot_df[which(Compare_df$Variable == "Tair"), ]
 # Plot_df <- Plot_df[with(Plot_df, order(Cell)), ]
@@ -443,3 +455,5 @@ ggplot(aes(x = Variable, y = AIC, col = Method), data = Compare_df) +
 # ggplot(aes(x = Cells, y = AIC, col = Method), data = Plot_df) + 
 #   geom_line() + theme_bw() + ggtitle("Tair Feature Selection")
 setwd(mainDir)
+
+
