@@ -216,4 +216,4 @@ Fun_Plots <- function(Variables, RegionFiles, SoilLayers) {
 } # Fun_Plots
 
 ####--------------- FUNCTION CALLS ----
-GlobalDrylands(numberOfCores = 1)
+GlobalDrylands(numberOfCores = detectCores())
