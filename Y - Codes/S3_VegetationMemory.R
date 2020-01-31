@@ -89,16 +89,6 @@ VegMem <- function(ClimVar, ClimVar2, Region, Cumlags, FromY, ToY){
                              AnomalyCalc = ave(AnomalyCalc, Month, FUN=scale))
       # save to original data frame
       Clim_df[,anomaly] <- Clim_iter$AnomalyCalc}
-    ### Establishing models----
-    # list to save Model objects
-    Mods_ls <- as.list(rep(NA, length(Cumlags))) # List of models
-    for(ModelIter in Cumlags){ # go through all possible cumulative lags
-      Mod <- lm(NDVI_anom ~ Clim_df[,ModelIter+3]) # full model
-      Mods_ls[[ModelIter+1]] <- Mod # save model to list of models
-      }
-    ### Selecting best model -----
-    AICs <- sapply(X = Mods_ls, FUN = AIC) # calculate AICs for each model
-    BestC1 <- which(abs(AICs) == min(abs(AICs), na.rm = TRUE))[1] # best model, if same value present use first
     #### ClimVar2 ------
     Clim2_vec <- as.vector(Clim2_mean_ras[pixel]) # extract raw data for pixel (instantenous predictor)
     Clim2_vec <- detrend(Clim2_vec, tt = 'linear') # linear detrending
@@ -125,21 +115,8 @@ VegMem <- function(ClimVar, ClimVar2, Region, Cumlags, FromY, ToY){
                              AnomalyCalc = ave(AnomalyCalc, Month, FUN=scale))
       # save to original data frame
       Clim2_df[,anomaly] <- Clim2_iter$AnomalyCalc}
-    ### Establishing models----
-    # list to save Model objects
-    Mods_ls2 <- as.list(rep(NA, length(Cumlags))) # List of models
-    for(ModelIter in Cumlags){ # go through all possible cumulative lags
-      Mod <- lm(NDVI_anom ~ Clim2_df[,ModelIter+3]) # full model
-      Mods_ls2[[ModelIter+1]] <- Mod # save model to list of models
-    }
-    ### Selecting best model -----
-    AICs2 <- sapply(X = Mods_ls2, FUN = AIC) # calculate AICs for each model
-    BestC2 <- which(abs(AICs2) == min(abs(AICs2), na.rm = TRUE))[1] # best model, if same value present use first
     ### Combining all the data -----
-    ModData_df <- data.frame(NDVI_anom = NDVI_anom, 
-                             NDVI_Lag1 = NDVI_Lag1, 
-                             C1 = Clim_df[,BestC1+2], 
-                             C2 = Clim2_df[,BestC2+2])
+    ModData_df <- cbind(NDVI_anom, NDVI_Lag1, Clim_df, Clim2_df)
     if(length(ThreshPos) > 0){ # set threshold months to NA if necessary
       ModData_df$NDVI_anom[ThreshPos] <- NA}
     ModData_df <- na.omit(ModData_df) # get rid of NA rows
@@ -147,46 +124,70 @@ VegMem <- function(ClimVar, ClimVar2, Region, Cumlags, FromY, ToY){
       ModelEval_ras[pixel] <- c(NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA)
       next()
     }
+    AICs_df <- data.frame(matrix(rep(NA, length(Cumlags)*length(Cumlags)), nrow = length(Cumlags)))
+    counter1 <- 0 # create a counter variable
     ## MODELS ----
-    ### Establishing models----
-      ## PCA of our variables
-      pca_mat <- matrix(cbind(ModData_df$NDVI_Lag1,ModData_df$C1, ModData_df$C2), 
-                        ncol = 3, byrow = FALSE, dimnames = list(1:length(ModData_df$NDVI_Lag1), 
-                                                                 c("t-1", ClimVar, ClimVar2))) # pca matrix
-      pca <- rda(pca_mat) # running pca
-      ## Extracting PC axes
-      pc1 <- summary(pca)[["sites"]][,1]
-      pc2 <- summary(pca)[["sites"]][,2]
-      pc3 <- summary(pca)[["sites"]][,3]
-      ## Building models
-      Mod0 <- lm(ModData_df$NDVI_anom ~ 1) # null model
-      Mod <- lm(ModData_df$NDVI_anom ~ pc1 + pc2 + pc3) # full model
-      loadings <- summary(pca)[["species"]] # extract loadings
-      coefficients <- Mod$coefficients[2:(dim(summary(pca)[["sites"]])[2]+1)] # extract coefficients
-      ## Make coefficients representative by multiplying them with the loadings
-      t1newCof <- loadings[1,] * coefficients
-      CnewCof <- loadings[2,] * coefficients
-      C2newCof <- loadings[3,] * coefficients
-      ## Saving information to vectors
-      coeffst1 <- sum(t1newCof) # NDVI-1
-      coeffsC <- sum(CnewCof) # ClimVar
-      coeffsC2 <- sum(C2newCof) # ClimVar2
-      if(anova(Mod0, Mod)$RSS[1] > anova(Mod0, Mod)$RSS[2]){ # only save p value if model is an imporvement
-        ps <- anova(Mod0, Mod)$'Pr(>F)'[2] 
-      }else{ # if model is not an improvement over null, set p to 1
-        ps <- 1}
-    ### Selecting best model -----
-    # Best <- which(abs(coeffsC) == max(abs(coeffsC)))[1] # select fro strongest soil memory effect
+    for(ModelIter1 in Cumlags){ # go through all possible cumulative lags
+      counter2 <- 0
+      for(ModelIter2 in Cumlags){ 
+        pca_mat <- as.matrix(cbind(ModData_df$NDVI_Lag1,
+                                   ModData_df[, counter1+5], 
+                                   ModData_df[, counter2+7+length(Cumlags)]))
+        dimnames(pca_mat) <- list(1:length(ModData_df$NDVI_Lag1),                                                                 c("t-1", paste(ClimVar,counter1), paste(ClimVar2, counter2)))
+        pca <- rda(pca_mat) # running pca
+        ## Extracting PC axes
+        pc1 <- summary(pca)[["sites"]][,1]
+        pc2 <- summary(pca)[["sites"]][,2]
+        pc3 <- summary(pca)[["sites"]][,3]
+        Mod <- lm(ModData_df$NDVI_anom ~ pc1 + pc2 + pc3) # full model
+        AICs_df[counter1+1, counter2+1] <- AIC(Mod)
+        counter2 <- counter2 +1
+      }
+      counter1 <- counter1 +1
+    }
+    
+    # find best model from data frame  
+    for(find in 1:dim(AICs_df)[1]){ # iterating over rows 
+      Pos <- which(AICs_df[find,] ==  min(AICs_df))
+      if(length(Pos) > 0){
+        PCABest <- c(find, Pos) # (clim, clim2)
+      }
+    }
+    
+    ### FINAL PCA MODEL ----
+    Mod0 <- lm(ModData_df$NDVI_anom ~ 1) # null model
+    pca_mat <- as.matrix(cbind(ModData_df$NDVI_Lag1,
+                               ModData_df[, PCABest[1]+4], 
+                               ModData_df[, PCABest[2]+6+length(Cumlags)]))
+    pca <- rda(pca_mat) # running pca
+    ## Extracting PC axes
+    pc1 <- summary(pca)[["sites"]][,1]
+    pc2 <- summary(pca)[["sites"]][,2]
+    pc3 <- summary(pca)[["sites"]][,3]
+    ## Building models
+    Mod0 <- lm(ModData_df$NDVI_anom ~ 1) # null model
+    Mod <- lm(ModData_df$NDVI_anom ~ pc1 + pc2 + pc3) # full model
+    loadings <- summary(pca)[["species"]] # extract loadings
+    coefficients <- Mod$coefficients[2:(dim(summary(pca)[["sites"]])[2]+1)] # extract coefficients
+    ## Make coefficients representative by multiplying them with the loadings
+    t1newCof <- loadings[1,] * coefficients
+    CnewCof <- loadings[2,] * coefficients
+    C2newCof <- loadings[3,] * coefficients
+    ## Saving information to vectors
+    coeffst1 <- sum(t1newCof) # NDVI-1
+    coeffsC <- sum(CnewCof) # ClimVar
+    coeffsC2 <- sum(C2newCof) # ClimVar2
     c_NDVI <- coeffst1 # ndvi coefficient
     c_Clim <- coeffsC # climate coefficient
     c_Clim2 <- coeffsC2 # climate 2 coefficient
-    p_Mod <- ps # p-value is set to p-value of best model
-    AICMod <- AIC(Mod) # AIC is set to best AIC
-    BestlagC1 <- BestC1-1  # this is the lag at which best model was observed
-    BestlagC2 <- BestC2-1  # this is the lag at which best model was observed
-    
+    if(anova(Mod0, Mod)$RSS[1] > anova(Mod0, Mod)$RSS[2]){ # only save p value if model is an improvement
+        ps <- anova(Mod0, Mod)$'Pr(>F)'[2] 
+      }else{ # if model is not an improvement over null, set p to 1
+        ps <- 1}
     ## EXPLAINED VARIANCE----
-    varpar <- with(ModData_df, varpart(NDVI_anom, NDVI_Lag1, C1, C2))
+    varpar <- with(ModData_df, varpart(NDVI_anom, NDVI_Lag1, 
+                                       ModData_df[, PCABest[1]+4], 
+                                       ModData_df[, PCABest[2]+6+length(Cumlags)]))
     Explainedvar <- 1 - varpar$part$indfract[dim(varpar$part$indfract)[1],3]
     VarNDVI <- varpar$part$indfract[1,3]
     VarQsoil <- varpar$part$indfract[2,3]
@@ -200,8 +201,8 @@ VegMem <- function(ClimVar, ClimVar2, Region, Cumlags, FromY, ToY){
     Vars[which(Vars < 0)] <- 0
     
     ## WRITING INFORMATION TO RASTERS----
-    ModelEval_ras[pixel] <- as.numeric(c(AICMod, c_NDVI, c_Clim, BestlagC1, c_Clim2, BestlagC2, 
-                                         Vars, p_Mod)) # saving model information to raster
+    ModelEval_ras[pixel] <- as.numeric(c(AIC(Mod), c_NDVI, c_Clim, find, c_Clim2, Pos, 
+                                         Vars, ps)) # saving model information to raster
     ## Updating progress bar----
     if(exists("pb") == FALSE){ # if we are currently on the first pixel
       T_End <- Sys.time() # note end time
