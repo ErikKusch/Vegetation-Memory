@@ -200,20 +200,29 @@ GlobalDrylands <- function(numberOfCores = 4){
 
 ####--------------- Fun_Plots [Variables, Regions, RegionFiles, Legends, SoilLayers]
 # (selecting and preparing data, and making COMPADRE data into rasters) ----
-Fun_Plots <- function(Variables, RegionFiles, SoilLayers) {
+Fun_Plots <- function(Region){
   print("++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++")
   print("PRODUCING PLOTS OF VEGETATION MEMORY")
   print("++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++")
   source(paste(Dir.Codes, "SX_Plots.R", sep="/"))
-  Fun_Plot(Region = RegionFiles, SoilLayer = 1, Scaled = TRUE)
-  Fun_Plot(Region = RegionFiles, SoilLayer = 1, Scaled = FALSE)
-  for(LoopReg in 1:length(unique(RegionFiles))){
-    for(LoopSoil in SoilLayers){
-      Fun_Plot(Region = RegionFiles[[LoopReg]], SoilLayer = SoilLayers[[LoopSoil]])
-    }
-  }
-  
+  Fun_Plot(Region = Region)
 } # Fun_Plots
 
 ####--------------- FUNCTION CALLS ----
 GlobalDrylands(numberOfCores = detectCores())
+
+## making a global raster of memory effects
+setwd(Dir.ERA.Monthly)
+files <- list.files()
+files <- files[grep(files, pattern = "2015.nc")][-1]
+ls <- list()# loading data
+for(i in 1:length(files)){
+  ls[[i]] <- brick(files[i])
+}
+Big_ras <- ls[[1]] # merging data
+for(i in 2:length(ls)){
+  Big_ras <- merge(Big_ras, ls[[i]])
+}
+writeRaster(Big_ras, "GlobalDrylands.nc", format="CDF") # saving data
+
+Fun_Plots(Region = "GlobalDrylands")
