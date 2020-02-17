@@ -176,14 +176,6 @@ GlobalDrylands <- function(numberOfCores = 4){
           } # memory-loop
         } # region-loop
       } # VegMem function
-      # scaling coefficients per region to be represented on fixed scales looping over regions
-      # for (MemReg in 1:length(Regions)) {
-      #   CoeffScaling(ClimVar = ClimVars, ClimVar2 = ClimVars2, Region = list(RegionFiles[[MemReg]],
-      #                                                                        RegionFiles[[MemReg]], 
-      #                                                                        RegionFiles[[MemReg]], 
-      #                                                                        RegionFiles[[MemReg]]),
-      #                Cumlags = list(Lags, Lags, Lags, Lags), FromY = FromY, ToY = To, UAbs = TRUE)
-      # } # CoeffScaling function 
     } # Fun_Vegetation
     
     ModVars <- c("Tair", "Qsoil1")
