@@ -39,9 +39,16 @@ VegMem <- function(ClimVar, ClimVar2, Region, Cumlags, FromY, ToY){
   ModelEval_ras <- NDVI_ras[[1:15]] # select 15 raster layers
   # put names on the layers to tell us what they contain later
   ModelEval_ras <- Fun_NamesRas(raster = ModelEval_ras, ClimVar = ClimVar, ClimVar2 = ClimVar2)
+  sink(file = paste(Dir.Memory, "/", Region, ".txt", sep=""))
+  print("Working on it")
+  sink()
   # MODELS----
   pbi <- 0 # parameter for progress bar
   for(pixel in Data_Pos){ # loop non-NA pixels
+    unlink(paste(Dir.Memory, "/", Region, ".txt", sep=""), recursive = TRUE)
+    sink(file = paste(Dir.Memory, "/", Region, ".txt", sep=""))
+    print(paste(pixel, max(Data_Pos), sep="_"))
+    sink()
     T_Begin <- Sys.time() # note time when calculation is started (needed for estimation of remaining time)
     ## DATA ----
     ### NDVI stuff -----
@@ -201,7 +208,7 @@ VegMem <- function(ClimVar, ClimVar2, Region, Cumlags, FromY, ToY){
     Vars[which(Vars < 0)] <- 0
     
     ## WRITING INFORMATION TO RASTERS----
-    ModelEval_ras[pixel] <- as.numeric(c(AIC(Mod), c_NDVI, c_Clim, find, c_Clim2, Pos, 
+    ModelEval_ras[pixel] <- as.numeric(c(AIC(Mod), c_NDVI, c_Clim, PCABest[1]-1, c_Clim2, PCABest[2]-1, 
                                          Vars, ps)) # saving model information to raster
     ## Updating progress bar----
     if(exists("pb") == FALSE){ # if we are currently on the first pixel
