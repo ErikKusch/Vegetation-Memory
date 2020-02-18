@@ -222,6 +222,7 @@ VegMem <- function(ClimVar, ClimVar2, Region, Cumlags, FromY, ToY){
     }
     pbi <- pbi + 1 ## Update progress bar
     setTxtProgressBar(pb, pbi)} # end of pixel loop
+  unlink(paste(Dir.Memory, "/", Region, ".txt", sep=""), recursive = TRUE)
   ### Save data ----- 
   writeRaster(ModelEval_ras, filename = paste(Dir.Memory,"/", Region, "_", ClimVar2, "-", ClimVar, 
                                               paste(Cumlags, collapse="_"),"_",FromY,"-", ToY, ".nc",sep=""),
