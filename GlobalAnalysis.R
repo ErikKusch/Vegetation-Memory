@@ -217,4 +217,5 @@ for(i in 2:length(ls)){
 }
 writeRaster(Big_ras, "GlobalDrylands.nc", format="CDF") # saving data
 
-Fun_Plots(Region = "GlobalDrylands")
+Fun_Plots(Region = "GlobalDrylands", Scaled = FALSE)
+Fun_Plots(Region = "GlobalDrylands", Scaled = TRUE)
