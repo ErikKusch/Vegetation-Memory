@@ -206,7 +206,7 @@ GlobalDrylands(numberOfCores = detectCores())
 ## making a global raster of memory effects
 setwd(Dir.ERA.Monthly)
 files <- list.files()
-files <- files[grep(files, pattern = "2015.nc")][-1]
+files <- files[grep(files, pattern = "2015.nc")][-1] # not using Drylands_1 because of data errors
 ls <- list()# loading data
 for(i in 1:length(files)){
   ls[[i]] <- brick(files[i])
