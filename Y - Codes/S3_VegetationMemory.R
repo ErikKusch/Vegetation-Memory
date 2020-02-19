@@ -46,8 +46,8 @@ VegMem <- function(ClimVar, ClimVar2, Region, Cumlags, FromY, ToY){
   pbi <- 0 # parameter for progress bar
   for(pixel in Data_Pos){ # loop non-NA pixels
     unlink(paste(Dir.Memory, "/", Region, ".txt", sep=""), recursive = TRUE)
-    sink(file = paste(Dir.Memory, "/", Region, ".txt", sep=""))
-    print(paste(pixel, max(Data_Pos), sep="_"))
+    # sink(file = paste(Dir.Memory, "/", Region, ".txt", sep=""))
+    # print(paste(pixel, max(Data_Pos), sep="_"))
     sink()
     T_Begin <- Sys.time() # note time when calculation is started (needed for estimation of remaining time)
     ## DATA ----
@@ -192,20 +192,26 @@ VegMem <- function(ClimVar, ClimVar2, Region, Cumlags, FromY, ToY){
     }else{ # if model is not an improvement over null, set p to 1
       ps <- 1}
     ## EXPLAINED VARIANCE----
-    varpar <- with(ModData_df, varpart(NDVI_anom, NDVI_Lag1, 
-                                       ModData_df[, PCABest[1]+4], 
-                                       ModData_df[, PCABest[2]+6+length(Cumlags)]))
-    Explainedvar <- 1 - varpar$part$indfract[dim(varpar$part$indfract)[1],3]
-    VarNDVI <- varpar$part$indfract[1,3]
-    VarQsoil <- varpar$part$indfract[2,3]
-    VarTair <- varpar$part$indfract[3,3]
-    VarNDVIQsoil <- varpar$part$indfract[4,3]
-    VarNDVITair <- varpar$part$indfract[6,3]
-    VarQsoilTair <- varpar$part$indfract[5,3] 
-    VarSharedAll <- varpar$part$indfract[7,3]
-    Vars <- c(Explainedvar, VarNDVI, VarQsoil, VarTair, 
-              VarNDVIQsoil, VarNDVITair, VarQsoilTair, VarSharedAll)
+    VarPart <- with(ModData_df, modEvA::varPart(A = summary(lm(NDVI_anom ~ NDVI_Lag1))[["r.squared"]], 
+                    B = summary(lm(NDVI_anom ~ ModData_df[, PCABest[1]+4]))[["r.squared"]], 
+                    C = summary(lm(NDVI_anom ~ ModData_df[, PCABest[2]+6+length(Cumlags)]))[["r.squared"]], 
+                    AB = summary(lm(NDVI_anom ~ NDVI_Lag1*ModData_df[, PCABest[1]+4]))[["r.squared"]],
+                    BC = summary(lm(NDVI_anom ~ ModData_df[, PCABest[1]+4]))[["r.squared"]], 
+                    AC = summary(lm(NDVI_anom ~ NDVI_Lag1*ModData_df[, PCABest[2]+6+length(Cumlags)]))[["r.squared"]], 
+                    ABC = summary(lm(NDVI_anom ~ NDVI_Lag1*ModData_df[, PCABest[1]+4]*ModData_df[, PCABest[2]+6+length(Cumlags)]))[["r.squared"]], 
+                    A.name = "t-1", B.name = "Qsoil1", C.name = "Tair", main = "Memory Components", plot = FALSE)
+                    )
+    Vars <- c(1-VarPart[8,1], # total variance
+              VarPart[1,1], # t-1
+              VarPart[2,1], # Qsoil1 
+              VarPart[3,1], # Tair
+              VarPart[4,1], # t-1 + qsoil1
+              VarPart[6,1], # t-1 + Tair
+              VarPart[5,1], # Qsoil1 + Tair
+              VarPart[7,1]) # shared by all
     Vars[which(Vars < 0)] <- 0
+    
+    # with(ModData_df, varpart(Y = ModData_df, X = NDVI_anom ~ NDVI_Lag1, ~ModData_df[, PCABest[1]+4], ~ModData_df[, PCABest[2]+6+length(Cumlags)], data = ModData_df))
     
     ## WRITING INFORMATION TO RASTERS----
     ModelEval_ras[pixel] <- as.numeric(c(AIC(Mod), c_NDVI, c_Clim, PCABest[1]-1, c_Clim2, PCABest[2]-1, 
