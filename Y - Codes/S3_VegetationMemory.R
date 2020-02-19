@@ -195,10 +195,10 @@ VegMem <- function(ClimVar, ClimVar2, Region, Cumlags, FromY, ToY){
     VarPart <- with(ModData_df, modEvA::varPart(A = summary(lm(NDVI_anom ~ NDVI_Lag1))[["r.squared"]], 
                     B = summary(lm(NDVI_anom ~ ModData_df[, PCABest[1]+4]))[["r.squared"]], 
                     C = summary(lm(NDVI_anom ~ ModData_df[, PCABest[2]+6+length(Cumlags)]))[["r.squared"]], 
-                    AB = summary(lm(NDVI_anom ~ NDVI_Lag1*ModData_df[, PCABest[1]+4]))[["r.squared"]],
+                    AB = summary(lm(NDVI_anom ~ NDVI_Lag1+ModData_df[, PCABest[1]+4]))[["r.squared"]],
                     BC = summary(lm(NDVI_anom ~ ModData_df[, PCABest[1]+4]))[["r.squared"]], 
-                    AC = summary(lm(NDVI_anom ~ NDVI_Lag1*ModData_df[, PCABest[2]+6+length(Cumlags)]))[["r.squared"]], 
-                    ABC = summary(lm(NDVI_anom ~ NDVI_Lag1*ModData_df[, PCABest[1]+4]*ModData_df[, PCABest[2]+6+length(Cumlags)]))[["r.squared"]], 
+                    AC = summary(lm(NDVI_anom ~ NDVI_Lag1+ModData_df[, PCABest[2]+6+length(Cumlags)]))[["r.squared"]], 
+                    ABC = summary(lm(NDVI_anom ~ NDVI_Lag1+ModData_df[, PCABest[1]+4]+ModData_df[, PCABest[2]+6+length(Cumlags)]))[["r.squared"]], 
                     A.name = "t-1", B.name = "Qsoil1", C.name = "Tair", main = "Memory Components", plot = FALSE)
                     )
     Vars <- c(1-VarPart[8,1], # total variance
