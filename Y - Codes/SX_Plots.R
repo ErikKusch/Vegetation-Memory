@@ -48,10 +48,10 @@ Fun_Plot <- function(Region, Scaled = FALSE){
     ylab("Latitude [°]") + xlab("Longitude [°]") + 
     theme_bw(base_size = 15)
   TriMap
-  # # COLOUR BARS, optional
-  # ggframe <- data.frame(Values = as.vector(Triplot),
-  #                       Idents = rep(SR_Titles, each = dim(values(Triplot))[1]),
-  #                       Order = rep(1:3, each = dim(values(Triplot))[1]))
+  # COLOUR BARS, optional
+  # ggframe <- data.frame(Values = na.omit(as.vector(Triplot)),
+  #                       Idents = rep(SR_Titles, each = length(na.omit(as.vector(Triplot)))/3),
+  #                       Order = rep(1:3, each = length(na.omit(as.vector(Triplot)))/3))
   # ggframeSmall <- na.omit(ggframe)
   # TriBars <- ggplotGrob(ggplot(ggframeSmall, aes(x = fct_reorder(Idents,Order), y = Values, fill = Idents)) + geom_boxplot() + theme_minimal(base_size = 15) + guides(fill=guide_legend(title="")) + theme(legend.position = c(.6, .9)) + ylab("Coefficients") +
   #                         theme(panel.background = element_rect(fill = "lightgrey")) + theme(axis.title.x=element_blank(), axis.text.x=element_blank(), axis.ticks.x=element_blank())
@@ -85,9 +85,9 @@ Fun_Plot <- function(Region, Scaled = FALSE){
   for(Plot in c(1,2,4,3,6,5)){
     mainTit <- IndTitles[Plot]
     if(Scaled == FALSE){
-      jpeg(file=paste(Dir.Plots, "/", Region, "_", SaveTitels[Plot], "_", Scaled,".jpeg", sep = ""), 
+      jpeg(file=paste(Dir.Plots, "/", Region, "_", SaveTitels[Plot],".jpeg", sep = ""), 
            width = width, height = height, units = "cm", quality = 100, res = 1000)
-      smaplot <- c(.1, .95, .175, .205)
+      smaplot <- c(.13, .935, .22, .25)
     }
     if(Plot == 1){
       plot(Countries, axes = FALSE, main = "Model AICs", col="#f2f2f2", bg="black", lwd=0.25)
@@ -138,42 +138,68 @@ Fun_Plot <- function(Region, Scaled = FALSE){
   
   # ##------- VARIANCE PARTITIONING -------
   ## Plotting Setup
-  col.list <- as.list(c(got(n = 4, alpha = 1, begin = 0.2, end = 1, direction = -1, option = "margaery"), 
-                        got(n = 4, alpha = 1, begin = 0.2, end = 1, direction = -1, option = "tully")))
+  col.list <- as.list(c(got(n = 3, alpha = 1, begin = 0.2, end = 1, direction = 1, option = "tyrell"),
+                        got(n = 2, alpha = 1, begin = 0.2, end = 1, direction = 1, option = "white_walkers"),
+                        got(n = 2, alpha = 1, begin = 0.2, end = 1, direction = -1, option = "margaery")[1],
+                        got(n = 2, alpha = 1, begin = 0.2, end = 1, direction = -1, option = "targaryen2")[1]))
   ## Data
   Alter_ras <- Raster[[7:14]]
   Alter_ras[2] <- 0
   values(Alter_ras)[which(values(Alter_ras) < 0)] <- 0
-  Order_ras <- sum(Alter_ras[[2:8]])
-  cells <- order(values(Order_ras))
+  Order_ras <- sum(Alter_ras[[2:8]], na.rm = FALSE)
+  cells <- order(values(Order_ras), na.last = TRUE) # ordering and putting NAs last
+  cells <- cells[1:(which(is.na(values(Order_ras)[cells]))[1]-1)] # only keeping cells before first NA
   plot_df <- data.frame(Data =NA, Cell =NA, Variance =NA)
-  Idents <- c("Total", "t-1", "Qsoil1", "Tair", 
-              "t-1 + Qsoil1", "t-1 + Tair", "Qsoil1 + Tair", "Shared")
+  Idents <- c("Total", "NDVI[t-1]", "Qsoil1", "Tair", 
+              "NDVI[t-1] + Qsoil1", "NDVI[t-1] + Tair", "Qsoil1 + Tair", "Shared by all")
   for(i in 2:8){
+    values(Alter_ras[[i]])[cells][which(values(Alter_ras[[i]])[cells] > quantile(values(Alter_ras[[i]])[cells], .99))] <- quantile(values(Alter_ras[[i]])[cells], .95)
     plot_df1 <- data.frame(Data = values(Alter_ras[[i]])[cells],
                            Cell = c(1:length(cells)),
                            Variance = rep(Idents[i], length(cells)))
     plot_df <- rbind(plot_df, plot_df1)
   }
-  plot_df[which(plot_df$Data > 1), 1] <- 1
-  Lims <- c(0, maxValue(Order_ras))
   plot_df <- na.omit(plot_df)
   ## Plotting
   P_Diag <- ggplot(data = plot_df, aes(y = Data, x = Cell, fill = Variance)) + geom_bar(stat = "identity") + theme_bw(base_size= 25) + xlab("Raster Cells") + ylab("Variance") + 
     scale_fill_manual(values=c(col.list[[1]], col.list[[2]], col.list[[3]], col.list[[4]],
-                               col.list[[5]], col.list[[6]], col.list[[7]])) + 
-    ylim(Lims)
-  
+                               col.list[[5]], col.list[[6]], col.list[[7]]))
   P_Box <- ggplot(data = plot_df, aes(y = Data, x = Variance, fill = Variance)) + geom_boxplot() + theme_bw(base_size= 25) + xlab("Raster Cells") + ylab("Variance") + 
     scale_fill_manual(values=c(col.list[[1]], col.list[[2]], col.list[[3]], col.list[[4]],
-                               col.list[[5]], col.list[[6]], col.list[[7]]))
-  
+                               col.list[[5]], col.list[[6]], col.list[[7]])) + 
+    theme(axis.text.x = element_text(size=7, angle=-30))
+  P_VarsA <- P_Diag +
+    annotation_custom(
+      grob = ggplotGrob(P_Box + theme(legend.position = "none", 
+                                      axis.title.x = element_blank(),
+                                      axis.title.y = element_blank())),
+      xmin = 0,
+      xmax = ceiling(quantile(plot_df$Cell, .7)),
+      ymin = .15,
+      ymax = .5
+    )
+  P_VarsB <- P_Box +
+    annotation_custom(
+      grob = ggplotGrob(P_Diag + theme(legend.position = "none", 
+                                       axis.title.x = element_blank(),
+                                       axis.title.y = element_blank())),
+      xmin = 1.1,
+      xmax = 6.9,
+      ymin = .1,
+      ymax = .25
+    )
   ## Saving Plots
   jpeg(file=paste(Dir.Plots, "/", Region, "_VarParDiag.jpeg", sep = ""), width = 32, height = 22, units = "cm", quality = 100, res = 100)
   P_Diag
   dev.off()
   jpeg(file=paste(Dir.Plots, "/", Region, "_VarParBox.jpeg", sep = ""), width = 32, height = 22, units = "cm", quality = 100, res = 100)
   P_Box
+  dev.off()
+  jpeg(file=paste(Dir.Plots, "/", Region, "_VarParA.jpeg", sep = ""), width = 32, height = 22, units = "cm", quality = 100, res = 100)
+  P_VarsA
+  dev.off()
+  jpeg(file=paste(Dir.Plots, "/", Region, "_VarParB.jpeg", sep = ""), width = 32, height = 22, units = "cm", quality = 100, res = 100)
+  P_VarsB
   dev.off()
   
   # Maps
