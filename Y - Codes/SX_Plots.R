@@ -3,7 +3,7 @@
 Fun_Plot <- function(Region, Scaled = FALSE){
   ####--------------- FILE SELECTION ----------------
   Raster <- brick(paste(Dir.Memory, "/", Region, ".nc", sep=""))
-  plot(Raster[[15]])
+  Raster[which(values(Raster[[15]]) > .05)] <- NA
   Back <- raster(paste(Dir.KrigCov, "Co-variates_NativeResolution.nc", sep="/"),
                  varname = "Elevation")
   Countries <- readOGR(Dir.Mask, "ne_50m_admin_0_countries", verbose = FALSE)
@@ -24,10 +24,11 @@ Fun_Plot <- function(Region, Scaled = FALSE){
     }
     # fill first and second NA with max and min
     for(rasterscale in c(2,3,5)){
-      values(Raster[[rasterscale]])[which(!is.na(values(Raster[[rasterscale]])))[101]] <- max(maxs)
-      values(Raster[[rasterscale]])[which(!is.na(values(Raster[[rasterscale]])))[100]] <- min(mins)
+      values(Raster[[rasterscale]])[which(!is.na(values(Raster[[rasterscale]])))[97:100]] <- max(maxs)
+      values(Raster[[rasterscale]])[which(!is.na(values(Raster[[rasterscale]])))[100:105]] <- min(mins)
     }
   }
+  
   ####--------------- PLOTTING ----------------
   ##------- MEMORY COMPONENTS -------
   ## Plotting Setup
@@ -146,6 +147,7 @@ Fun_Plot <- function(Region, Scaled = FALSE){
   Alter_ras <- Raster[[7:14]]
   Alter_ras[2] <- 0
   values(Alter_ras)[which(values(Alter_ras) < 0)] <- 0
+  values(Alter_ras)[which(values(Alter_ras) > 1)] <- 1
   Order_ras <- sum(Alter_ras[[2:8]], na.rm = FALSE)
   cells <- order(values(Order_ras), na.last = TRUE) # ordering and putting NAs last
   cells <- cells[1:(which(is.na(values(Order_ras)[cells]))[1]-1)] # only keeping cells before first NA
@@ -161,65 +163,136 @@ Fun_Plot <- function(Region, Scaled = FALSE){
   }
   plot_df <- na.omit(plot_df)
   ## Plotting
-  P_Diag <- ggplot(data = plot_df, aes(y = Data, x = Cell, fill = Variance)) + geom_bar(stat = "identity") + theme_bw(base_size= 25) + xlab("Raster Cells") + ylab("Variance") + 
+  P_Diag <- ggplot(data = plot_df, aes(y = Data, x = Cell, fill = Variance)) + geom_bar(stat = "identity") + theme_bw(base_size= 25) + xlab("Raster Cells") + ylab("Variance") +
     scale_fill_manual(values=c(col.list[[1]], col.list[[2]], col.list[[3]], col.list[[4]],
                                col.list[[5]], col.list[[6]], col.list[[7]]))
-  P_Box <- ggplot(data = plot_df, aes(y = Data, x = Variance, fill = Variance)) + geom_boxplot() + theme_bw(base_size= 25) + xlab("Raster Cells") + ylab("Variance") + 
+  ggsave(plot = P_Diag, file=paste(Dir.Plots, "/", Region, "_VarParDiag.jpeg", sep = ""), width = 32, height = 22, units = "cm", quality = 100)
+
+  P_Box <- ggplot(data = plot_df, aes(y = Data, x = Variance, fill = Variance)) + geom_boxplot() + theme_bw(base_size= 25) + xlab("Raster Cells") + ylab("Variance") +
     scale_fill_manual(values=c(col.list[[1]], col.list[[2]], col.list[[3]], col.list[[4]],
-                               col.list[[5]], col.list[[6]], col.list[[7]])) + 
+                               col.list[[5]], col.list[[6]], col.list[[7]])) +
     theme(axis.text.x = element_text(size=7, angle=-30))
-  P_VarsA <- P_Diag +
-    annotation_custom(
-      grob = ggplotGrob(P_Box + theme(legend.position = "none", 
-                                      axis.title.x = element_blank(),
-                                      axis.title.y = element_blank())),
-      xmin = 0,
-      xmax = ceiling(quantile(plot_df$Cell, .7)),
-      ymin = .15,
-      ymax = .5
-    )
-  P_VarsB <- P_Box +
-    annotation_custom(
-      grob = ggplotGrob(P_Diag + theme(legend.position = "none", 
-                                       axis.title.x = element_blank(),
-                                       axis.title.y = element_blank())),
-      xmin = 1.1,
-      xmax = 6.9,
-      ymin = .1,
-      ymax = .25
-    )
-  ## Saving Plots
-  jpeg(file=paste(Dir.Plots, "/", Region, "_VarParDiag.jpeg", sep = ""), width = 32, height = 22, units = "cm", quality = 100, res = 100)
-  P_Diag
-  dev.off()
-  jpeg(file=paste(Dir.Plots, "/", Region, "_VarParBox.jpeg", sep = ""), width = 32, height = 22, units = "cm", quality = 100, res = 100)
-  P_Box
-  dev.off()
-  jpeg(file=paste(Dir.Plots, "/", Region, "_VarParA.jpeg", sep = ""), width = 32, height = 22, units = "cm", quality = 100, res = 100)
-  P_VarsA
-  dev.off()
-  jpeg(file=paste(Dir.Plots, "/", Region, "_VarParB.jpeg", sep = ""), width = 32, height = 22, units = "cm", quality = 100, res = 100)
-  P_VarsB
-  dev.off()
+  ggsave(plot = P_Box, file=paste(Dir.Plots, "/", Region, "_VarParBox.jpeg", sep = ""), width = 32, height = 22, units = "cm", quality = 100)
+  # P_VarsA <- P_Diag +
+  #   annotation_custom(
+  #     grob = ggplotGrob(P_Box + theme(legend.position = "none", 
+  #                                     axis.title.x = element_blank(),
+  #                                     axis.title.y = element_blank())),
+  #     xmin = 0,
+  #     xmax = ceiling(quantile(plot_df$Cell, .7)),
+  #     ymin = .15,
+  #     ymax = .5
+  #   )
+  # P_VarsB <- P_Box +
+  #   annotation_custom(
+  #     grob = ggplotGrob(P_Diag + theme(legend.position = "none", 
+  #                                      axis.title.x = element_blank(),
+  #                                      axis.title.y = element_blank())),
+  #     xmin = 1.1,
+  #     xmax = 6.9,
+  #     ymin = .1,
+  #     ymax = .25
+  #   )
   
   # Maps
   col.varpar1 <- got(n = 100, alpha = 1, begin = 0.2, end = 1, direction = -1, option = "wildfire")
-  col.varpar2 <- got(n = 100, alpha = 1, begin = 0.2, end = 1, direction = -1, option = "targaryen")
-  col.varpar3 <- got(n = 100, alpha = 1, begin = 0.2, end = 1, direction = -1, option = "jon_snow")
+  col.varpar2 <- got(n = 100, alpha = 1, begin = .4, end = 1, direction = 1, option = "jon_snow")
+  col.varpar3 <- got(n = 100, alpha = 1, begin = 0.2, end = 1, direction = -1, option = "targaryen")
   col.varpar4 <- got(n = 100, alpha = 1, begin = 0.2, end = 1, direction = -1, option = "margaery")
   col.list <- list(col.varpar1, col.varpar1, col.varpar2, col.varpar3,
                    col.varpar4, col.varpar4, col.varpar4, col.varpar4)
   Titles <- c("Total Explained Variance", "NDVI[t-1]", "Qsoil1", "Tair", "NDVI[t-1] + Qsoil1",
               "NDVI[t-1] + Tair", "Qsoil1 + Tair", "Shared by all")
-  jpeg(file=paste(Dir.Plots, "/", Region, "_VarParMap.jpeg", sep = ""), width = 22, height = 32, units = "cm", quality = 100, res = 1000)
-  par(mfrow=c(4,2))
+  ## singular
+  jpeg(file=paste(Dir.Plots, "/", Region, "_VarParMap1.jpeg", sep = ""), width = 32, height = 17, units = "cm", quality = 100, res = 1000)
+  par(mfrow=c(2,2))
   Alter_ras <- Raster[[7:14]]
   Alter_ras[2] <- 0
   values(Alter_ras)[which(values(Alter_ras) < 0)] <- 0
-  for(i in 1:8){
+  for(i in 1:4){
     col.varpar <- col.list[[i]]
     plot(Alter_ras[[i]], col=col.varpar, colNA = "black", legend=FALSE, axes=FALSE, main = Titles[i])
-    plot(Alter_ras[[i]], legend.only=TRUE, col=col.varpar, smallplot=c(.05, .95, .27, .3), horizontal = TRUE, axis.args=list(cex.axis=2.5))
+    plot(Alter_ras[[i]], legend.only=TRUE, col=col.varpar, smallplot=c(.1, .9, .2, .23), horizontal = TRUE, axis.args=list(cex.axis=2.5))
   }
   dev.off()
+  ## shared
+  jpeg(file=paste(Dir.Plots, "/", Region, "_VarParMap2.jpeg", sep = ""), width = 32, height = 17, units = "cm", quality = 100, res = 1000)
+  par(mfrow=c(2,2))
+  Alter_ras <- Raster[[7:14]]
+  Alter_ras[2] <- 0
+  values(Alter_ras)[which(values(Alter_ras) < 0)] <- 0
+  for(i in 5:8){
+    col.varpar <- col.list[[i]]
+    plot(Alter_ras[[i]], col=col.varpar, colNA = "black", legend=FALSE, axes=FALSE, main = Titles[i])
+    plot(Alter_ras[[i]], legend.only=TRUE, col=col.varpar, smallplot=c(.1, .9, .2, .23), horizontal = TRUE, axis.args=list(cex.axis=2.5))
+  }
+  dev.off()
+  
+  # ##------- MAPVIEW -------
+  ## EFFECTS
+  if(Scaled == TRUE){
+    Raster <- brick(paste(Dir.Memory, "/", Region, ".nc", sep=""))
+    Raster[which(values(Raster[[15]]) > .05)] <- NA
+    min <- min(mins)
+    max <- max(maxs)
+    col.mapview <- c(col.signeg[1:80], col.sigpos)
+    col.breaks <- unique(c(seq(from = min, to = 0, length = 80), seq(from = 0, to = max, length = 100)))
+    m0_c <- mapview(Countries, color = "black", alpha.regions = 0)
+    m1_c <- mapview(layer.name = "Model AICs", 
+                    abs(Raster[[1]]), legend = TRUE, col.regions = col.sigpos, maxpixels =  5755680, na.color = "#FFFFFF00")
+    m2_c <- mapview(layer.name = "Intrinsic Memory (NDVI [t-1]",  at = col.breaks,
+                    Raster[[2]], legend = TRUE, col.regions = col.mapview, maxpixels =  5755680, na.color = "#FFFFFF00")
+    m3_c <- mapview(layer.name = "Qsoil1 Memory Effects",  at = col.breaks,
+                    Raster[[3]], legend = TRUE, col.regions = col.mapview, maxpixels =  5755680, na.color = "#FFFFFF00")
+    m4_c <- mapview(layer.name = "Qsoil1 Memory Length", at = 0:length(col.lags),
+                    Raster[[4]], legend = TRUE, col.regions = col.lags, maxpixels =  5755680, na.color = "#FFFFFF00")
+    m5_c <- mapview(layer.name = "Tair Memory Effects",  at = col.breaks,
+                    Raster[[5]], legend = TRUE, col.regions = col.mapview, maxpixels =  5755680, na.color = "#FFFFFF00")
+    m6_c <- mapview(layer.name = "Tair Memory Length", at = 0:length(col.lags),
+                    Raster[[6]], legend = TRUE, col.regions = col.lags, maxpixels =  5755680, na.color = "#FFFFFF00")
+  }else{
+    col.mapview <- c(col.signeg[1:80], col.sigpos)
+    m0_c <- mapview(Countries, color = "black", alpha.regions = 0)
+    m1_c <- mapview(layer.name = "Model AICs", 
+                    abs(Raster[[1]]), legend = TRUE, col.regions = col.sigpos, maxpixels =  5755680, na.color = "#FFFFFF00")
+    m2_c <- mapview(layer.name = "Intrinsic Memory (NDVI [t-1]",  at = unique(c(seq(from = minValue(Raster[[2]]), to = 0, length = 80), seq(from = 0, to = maxValue(Raster[[2]]), length = 100))),
+                    Raster[[2]], legend = TRUE, col.regions = col.mapview, maxpixels =  5755680, na.color = "#FFFFFF00")
+    m3_c <- mapview(layer.name = "Qsoil1 Memory Effects",  at = unique(c(seq(from = minValue(Raster[[3]]), to = 0, length = 80), seq(from = 0, to = maxValue(Raster[[3]]), length = 100))),
+                    Raster[[3]], legend = TRUE, col.regions = col.mapview, maxpixels =  5755680, na.color = "#FFFFFF00")
+    m4_c <- mapview(layer.name = "Qsoil1 Memory Length", at = 0:length(col.lags),
+                    Raster[[4]], legend = TRUE, col.regions = col.lags, maxpixels =  5755680, na.color = "#FFFFFF00")
+    m5_c <- mapview(layer.name = "Tair Memory Effects",  at = unique(c(seq(from = minValue(Raster[[5]]), to = 0, length = 80), seq(from = 0, to = maxValue(Raster[[5]]), length = 100))),
+                    Raster[[5]], legend = TRUE, col.regions = col.mapview, maxpixels =  5755680, na.color = "#FFFFFF00")
+    m6_c <- mapview(layer.name = "Tair Memory Length", at = 0:length(col.lags),
+                    Raster[[6]], legend = TRUE, col.regions = col.lags, maxpixels =  5755680, na.color = "#FFFFFF00")
+  }
+  # Combine all maps into 1 map
+  m_c <- m0_c + m1_c + m2_c + m3_c + m4_c+ m5_c+ m6_c
+  # Plot the map
+  # m_c
+  mapshot(m_c, url = paste0(Dir.Plots, "/", Region,"_Effects_",Scaled,".html"))
+  
+  ## VARIANCE
+  m0_c <- mapview(Countries, color = "black", alpha.regions = 0)
+  m1_c <- mapview(layer.name = "Total Explained Variance", at = seq(from = 0, to = maxValue(Alter_ras[[1]]), length = 100), 
+                  Alter_ras[[1]], legend = TRUE, col.regions = col.varpar1, maxpixels =  5755680, na.color = "#FFFFFF00")
+  m2_c <- mapview(layer.name = "NDVI[t-1]", at = seq(from = 0, to = maxValue(Alter_ras[[2]]), length = 100),
+                  Alter_ras[[2]], legend = TRUE, col.regions = col.varpar1, maxpixels =  5755680, na.color = "#FFFFFF00")
+  m3_c <- mapview(layer.name = "Qsoil1",  at = seq(from = 0, to = maxValue(Alter_ras[[3]]), length = 100),
+                  Alter_ras[[3]], legend = TRUE, col.regions = col.varpar2, maxpixels =  5755680, na.color = "#FFFFFF00")
+  m4_c <- mapview(layer.name = "Tair",  at = seq(from = 0, to = maxValue(Alter_ras[[4]]), length = 100),
+                  Alter_ras[[4]], legend = TRUE, col.regions = col.varpar3, maxpixels =  5755680, na.color = "#FFFFFF00")
+  m5_c <- mapview(layer.name = "NDVI[t-1] + Qsoil1",  at = seq(from = 0, to = maxValue(Alter_ras[[5]]), length = 100),
+                  Alter_ras[[5]], legend = TRUE, col.regions = col.varpar4, maxpixels =  5755680, na.color = "#FFFFFF00")
+  m6_c <- mapview(layer.name = "NDVI[t-1] + Tair",  at = seq(from = 0, to = maxValue(Alter_ras[[6]]), length = 100),
+                  Alter_ras[[6]], legend = TRUE, col.regions = col.varpar4, maxpixels =  5755680, na.color = "#FFFFFF00")
+  m7_c <- mapview(layer.name = "Qsoil1 + Tair",  at = seq(from = 0, to = maxValue(Alter_ras[[7]]), length = 100),
+                  Alter_ras[[7]], legend = TRUE, col.regions = col.varpar4, maxpixels =  5755680, na.color = "#FFFFFF00")
+  m8_c <- mapview(layer.name = "Shared by all",  at = seq(from = 0, to = maxValue(Alter_ras[[8]]), length = 100),
+                  Alter_ras[[8]], legend = TRUE, col.regions = col.varpar4, maxpixels =  5755680, na.color = "#FFFFFF00")
+  # Combine all maps into 1 map
+  m_c <- m0_c+ m1_c + m2_c + m3_c + m4_c + m5_c + m6_c + m7_c + m8_c
+  # Plot the map
+  # m_c
+  mapshot(m_c, url = paste0(Dir.Plots, "/", Region,"_Variances.html"))
 } # end of Fun_Plot
