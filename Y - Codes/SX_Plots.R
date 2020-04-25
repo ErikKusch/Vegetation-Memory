@@ -407,6 +407,16 @@ Fun_PlotReg <- function(){
     theme_bw() + scale_color_viridis(discrete = TRUE, option = "D") +
     guides(color=guide_legend(nrow = 5), linetype=guide_legend(nrow = 6))
   
+  prow <- plot_grid(p_REALMS + theme(legend.position='none'), 
+                    p_RELBIO + theme(legend.position='none'), 
+                    align = 'vh',
+                    labels = c("A", "B"),
+                    hjust = -1,
+                    nrow = 1)
+  legend_b <- get_legend(p_RELBIO + theme(legend.position="bottom"))
+  p <- plot_grid( prow, legend_b, ncol = 1, rel_heights = c(1, .35))
+  ggsave(p, file=paste(Dir.Plots, "/RegionalDifferences1.jpeg", sep = ""), width = 32, height = 21, units = "cm", quality = 100)
+  
   ### INTRINSIC ~ LAG SOIL ----
   X = "Lag Qsoil1"
   Y = "NDVI [t-1]"
@@ -440,17 +450,6 @@ Fun_PlotReg <- function(){
     labs(x = X, y = Y) +
     labs(color='Biomes in Australasia') + 
     theme_bw()  + scale_color_viridis(discrete = TRUE, option = "D")
-  
-    prow <- plot_grid(p_REALMS + theme(legend.position='none'), 
-              p_RELBIO + theme(legend.position='none'), 
-              align = 'vh',
-              labels = c("A", "B"),
-              hjust = -1,
-              nrow = 1)
-    legend_b <- get_legend(p_RELBIO + theme(legend.position="bottom"))
-    p <- plot_grid( prow, legend_b, ncol = 1, rel_heights = c(1, .35))
-    
-  ggsave(p, file=paste(Dir.Plots, "/RegionalDifferences1.jpeg", sep = ""), width = 32, height = 21, units = "cm", quality = 100)
   
   g <- plot_grid(p1_REALMS, 
                     p1_RELBIO, 
