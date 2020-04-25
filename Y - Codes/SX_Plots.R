@@ -296,3 +296,170 @@ Fun_Plot <- function(Region, Scaled = FALSE){
   # m_c
   mapshot(m_c, url = paste0(Dir.Plots, "/", Region,"_Variances.html"))
 } # end of Fun_Plot
+
+################################################################################
+####--------------- Fun_Region [] # assess correllations of different vegmem characteristics in different regions)
+Fun_PlotReg <- function(){
+  ### DATA ----
+  Raster <- brick(paste(Dir.Memory, "/GlobalDrylands.nc", sep=""))
+  ### Ecoregions ---
+  if(!file.exists(file.path(Dir.Mask, "WWF_ecoregions"))){
+    # downloading Terrestrial Ecoregion Shapefile as zip
+    download.file("http://assets.worldwildlife.org/publications/15/files/original/official_teow.zip",
+                  destfile = file.path(Dir.Mask, "wwf_ecoregions.zip")
+    )
+    # unpacking the zip
+    unzip(file.path(Dir.Mask, "wwf_ecoregions.zip"),
+          exdir = file.path(Dir.Mask, "WWF_ecoregions")
+    )
+  }
+  wwf <- readOGR(file.path(Dir.Mask, "WWF_ecoregions", "official", "wwf_terr_ecos.shp"), verbose = FALSE) # loading shapefile for biomes
+  wwf <- crop(wwf, extent(Raster)) # crop to extent of vegmem
+  
+  ### Realms ---
+  PlotColsReg <- rainbow(length(unique(wwf@data[["REALM"]])))
+  parcel_ras <- rasterize(wwf, Raster, "REALM", fun='first') # rasterize
+  levelplot(parcel_ras, at = c(sort(unique(values(parcel_ras))), max(unique(values(parcel_ras)), na.rm = TRUE)+1) -.5, 
+            col.regions = PlotColsReg)
+  
+  ### Biomes ---
+  parcel_ras2 <- rasterize(wwf, Raster, "BIOME", fun='first') # rasterize
+  values(parcel_ras2)[which(values(parcel_ras2) == 98 | values(parcel_ras2) == 99)] <- NA
+  PlotColsReg2 <- rainbow(length(unique(values(parcel_ras2))))
+  levelplot(parcel_ras2, at = c(sort(unique(values(parcel_ras2))), max(unique(values(parcel_ras2)), na.rm = TRUE)+1) -.5, 
+            col.regions = PlotColsReg2)
+  
+  ### Raster stacking ----
+  Raster <- stack(Raster, parcel_ras, parcel_ras2) # combine raster
+  Raster_df <- na.omit(as.data.frame(Raster)) # convert to data frame and omit NAs
+  colnames(Raster_df) <- c("Model AICs", "NDVI [t-1]", "Qsoil1", "Lag Qsoil1", "Tair", "Lag Tair",
+                           "Total Explained Variance", "V_NDVI", "V_C1", "V_C2", "V_C1.2", 
+                           "V_C1.3", "V_C2.3", "V_Shared", "Model p-value", "REALM", "BIOME") # set column names
+  ### Recoding Realms ---
+  recode <- paste0(sort(unique(Raster_df$REALM)), 
+                   paste0(" = '", levels(wwf@data[["REALM"]])[sort(unique(Raster_df$REALM))], "'"), 
+                   collapse = ";")
+  Raster_df$REALM <- recode(Raster_df$REALM,recode)
+  
+  ### Establishing Biomes in Realms ---
+  Raster_df$RELBIO <- paste(Raster_df$REALM, Raster_df$BIOME, sep ="_") # combine biomes and realms
+  Raster_df$RELBIO[which(Raster_df$RELBIO %in% names(which(table(Raster_df$RELBIO) < 50)))] <- NA # omit biomes in realms with less than 50 samples
+  Raster_df <- na.omit(Raster_df)
+  
+  ### RECODING ABBREVIATIONS ---
+  Abbr_Realms <- levels(wwf@data[["REALM"]])
+  Full_Realms <- c("Australasia", "Antarctic", "Afrotropics", "IndoMalay", "Nearctic", "Neotropics", "Oceania", "Palearctic")
+ for(Iter_Realms in 1:length(Abbr_Realms)){
+   Raster_df$REALM[which(Raster_df$REALM == Abbr_Realms[Iter_Realms])] <- Full_Realms[Iter_Realms]
+ }
+  
+  Abbr_Biomes <- 1:18
+  Full_Biomes <- c("Tropical & Subtropical Moist Broadleaf Forests",
+                   "Tropical & Subtropical Dry Broadleaf Forests",
+                   "Tropical & Subtropical Coniferous Forests",
+                   "Temperate Broadleaf & Mixed Forests",
+                   "Temperate Conifer Forests",
+                   "Boreal Forests/Taiga",
+                   "Tropical & Subtropical Grasslands, Savannas & Shrublands",
+                   "Temperate Grasslands, Savannas & Shrublands",
+                   "Flooded Grasslands & Savannas",
+                   "Montane Grasslands & Shrublands",
+                   "Tundra",
+                   "Mediterranean Forests, Woodlands & Scrub",
+                   "Deserts & Xeric Shrublands",
+                   "Mangroves")
+  for(Iter_Biomes in 1:length(Abbr_Biomes)){
+    Raster_df$BIOME[which(Raster_df$BIOME == Abbr_Biomes[Iter_Biomes])] <- Full_Biomes[Iter_Biomes]
+  }
+  
+  ### TOTAL EXPLAINED VARIANCE ~ INTRINSIC ----
+  X = "NDVI [t-1]"
+  Y = "Total Explained Variance"
+  ## limit data frame to desired variables
+  Raster_df2 <- data.frame(X = Raster_df[, which(colnames(Raster_df) == X)],
+                          Y = Raster_df[, which(colnames(Raster_df) == Y)],
+                          REALM = Raster_df$REALM,
+                          BIOME = Raster_df$BIOME,
+                          RELBIO = Raster_df$RELBIO)
+  
+  ### REALMS ---
+  NDVI_null <- glm(Y ~ 1, data = Raster_df2)
+  NDVI_glm <- glm(Y ~ X*REALM, data = Raster_df2)
+  anova(NDVI_null, NDVI_glm)
+  ### PLOTTING
+  p_REALMS <- ggplot(Raster_df2, aes(x = X, y = Y, linetype = factor(REALM))) + 
+    stat_smooth(method="lm", se = TRUE) + 
+    labs(x = X, y = Y) +
+    labs(linetype='Realm') + 
+    ylim(c(0, 1)) +
+    theme_bw() + scale_color_jcolors(palette = "pal5")
+  
+  ### BIOMES in REALMS ---
+  NDVI_null <- glm(Y ~ 1, data = Raster_df2)
+  NDVI_glm <- glm(Y ~ X*RELBIO, data = Raster_df2)
+  anova(NDVI_null, NDVI_glm)
+  ### PLOTTING
+  p_RELBIO <- ggplot(Raster_df2, aes(x = X, y = Y, color = factor(BIOME), linetype = factor(REALM))) + 
+    stat_smooth(method="lm", se = TRUE) + 
+    labs(x = X, y = Y) +
+    labs(color='Biome', linetype = "Realm") + 
+    ylim(c(0, 1)) +
+    theme_bw() + scale_color_viridis(discrete = TRUE, option = "D") +
+    guides(color=guide_legend(nrow = 6), linetype=guide_legend(nrow = 5))
+  
+  ### INTRINSIC ~ LAG SOIL ----
+  X = "Lag Qsoil1"
+  Y = "NDVI [t-1]"
+  ## limit data frame to desired variables
+  Raster_df2 <- data.frame(X = Raster_df[, which(colnames(Raster_df) == X)],
+                           Y = Raster_df[, which(colnames(Raster_df) == Y)],
+                           REALM = Raster_df$REALM,
+                           RELBIO = Raster_df$RELBIO,
+                           BIOME = Raster_df$BIOME)
+  
+  ### REALMS ---
+  NDVI_null <- glm(Y ~ 1, data = Raster_df2)
+  NDVI_glm <- glm(Y ~ X*REALM, data = Raster_df2)
+  anova(NDVI_null, NDVI_glm)
+  ### PLOTTING
+  p1_REALMS <- ggplot(Raster_df2, aes(x = X, y = Y, linetype = factor(REALM), linewidth = 2)) + 
+    stat_smooth(method="lm", se = TRUE, size = 1.2) + 
+    labs(x = X, y = Y) +
+    labs(linetype='Realm') +
+    theme_bw()
+  
+  ### BIOMES in REALMS ---
+  Raster_df3 <- Raster_df2[which(Raster_df2$REALM == "Australasia"), ] # limiting to just one realm
+ 
+  NDVI_null <- glm(Y ~ 1, data = Raster_df3)
+  NDVI_glm <- glm(Y ~ X*BIOME, data = Raster_df3)
+  anova(NDVI_null, NDVI_glm)
+  ### PLOTTING
+  p1_RELBIO <- ggplot(Raster_df3, aes(x = X, y = Y, color = factor(BIOME))) +
+    stat_smooth(method="lm", se = TRUE) + 
+    labs(x = X, y = Y) +
+    labs(color='Biomes in Australasia') + 
+    theme_bw()  + scale_color_viridis(discrete = TRUE, option = "D")
+  
+    prow <- plot_grid(p_REALMS + theme(legend.position='none'), 
+              p_RELBIO + theme(legend.position='none'), 
+              align = 'vh',
+              labels = c("A", "B"),
+              hjust = -1,
+              nrow = 1)
+    legend_b <- get_legend(p_RELBIO + theme(legend.position="bottom"))
+    p <- plot_grid( prow, legend_b, ncol = 1, rel_heights = c(1, .35))
+    
+  ggsave(p, file=paste(Dir.Plots, "/RegionalDifferences1.jpeg", sep = ""), width = 32, height = 21, units = "cm", quality = 100)
+  
+  g <- plot_grid(p1_REALMS, 
+                    p1_RELBIO, 
+                    align = 'vh',
+                    labels = c("A", "B"),
+                    hjust = -1,
+                    nrow = 2)
+  g
+  
+  ggsave(g, file=paste(Dir.Plots, "/RegionalDifferences2.jpeg", sep = ""), width = 21, height = 21, units = "cm", quality = 100)
+  
+} # end of function
