@@ -405,7 +405,7 @@ Fun_PlotReg <- function(){
     labs(color='Biome', linetype = "Realm") + 
     ylim(c(0, 1)) +
     theme_bw() + scale_color_viridis(discrete = TRUE, option = "D") +
-    guides(color=guide_legend(nrow = 6), linetype=guide_legend(nrow = 5))
+    guides(color=guide_legend(nrow = 5), linetype=guide_legend(nrow = 6))
   
   ### INTRINSIC ~ LAG SOIL ----
   X = "Lag Qsoil1"
@@ -458,8 +458,5 @@ Fun_PlotReg <- function(){
                     labels = c("A", "B"),
                     hjust = -1,
                     nrow = 2)
-  g
-  
-  ggsave(g, file=paste(Dir.Plots, "/RegionalDifferences2.jpeg", sep = ""), width = 21, height = 21, units = "cm", quality = 100)
-  
+  ggsave(g, file=paste(Dir.Plots, "/RegionalDifferences2.jpeg", sep = ""), width = 32, height = 18, units = "cm", quality = 100)
 } # end of function
