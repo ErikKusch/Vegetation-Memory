@@ -314,16 +314,18 @@ Fun_PlotReg <- function(){
     )
   }
   wwf <- readOGR(file.path(Dir.Mask, "WWF_ecoregions", "official", "wwf_terr_ecos.shp"), verbose = FALSE) # loading shapefile for biomes
-  wwf <- crop(wwf, extent(Raster)) # crop to extent of vegmem
+  # wwf <- rgeos::gBuffer(wwf, byid=TRUE, width=0)
+  # wwf <- crop(wwf, extent(Raster)) # crop to extent of vegmem
   
   ### Realms ---
   PlotColsReg <- rainbow(length(unique(wwf@data[["REALM"]])))
-  parcel_ras <- rasterize(wwf, Raster, "REALM", fun='first') # rasterize
+  wwf@data[,"REALM"] <- as.factor(wwf@data[,"REALM"])
+  parcel_ras <- rasterize(x = wwf, y = Raster, field = "REALM", fun = 'first') # rasterize
   levelplot(parcel_ras, at = c(sort(unique(values(parcel_ras))), max(unique(values(parcel_ras)), na.rm = TRUE)+1) -.5, 
             col.regions = PlotColsReg)
   
   ### Biomes ---
-  parcel_ras2 <- rasterize(wwf, Raster, "BIOME", fun='first') # rasterize
+  parcel_ras2 <- rasterize(x = wwf, y = Raster, field = "BIOME", fun = 'first') # rasterize
   values(parcel_ras2)[which(values(parcel_ras2) == 98 | values(parcel_ras2) == 99)] <- NA
   PlotColsReg2 <- rainbow(length(unique(values(parcel_ras2))))
   levelplot(parcel_ras2, at = c(sort(unique(values(parcel_ras2))), max(unique(values(parcel_ras2)), na.rm = TRUE)+1) -.5, 
@@ -375,25 +377,34 @@ Fun_PlotReg <- function(){
   ### TOTAL EXPLAINED VARIANCE ~ INTRINSIC ----
   X = "NDVI [t-1]"
   Y = "Total Explained Variance"
+  Z = "Tair"
+  ## limit data frame to desired variables
+  Raster_df2 <- data.frame(X = rep(Raster_df[, which(colnames(Raster_df) == Y)], 2),
+                          Y = c(Raster_df[, which(colnames(Raster_df) == X)], Raster_df[, which(colnames(Raster_df) == Z)]),
+                          Effect = rep(c(X, Z), each = length(Raster_df[, which(colnames(Raster_df) == Y)])),
+                          REALM = rep(Raster_df$REALM, 2),
+                          BIOME = rep(Raster_df$BIOME, 2),
+                          RELBIO = rep(Raster_df$RELBIO, 2))
+  
+  ### PLOTTING
+  p_REALMS <- ggplot(Raster_df2, aes(x = Y, y = X, linetype = factor(REALM), color = as.factor(Effect))) + 
+    stat_smooth(method="lm", se = TRUE) + 
+    labs(x = "Effect Size", y = Y) +
+    labs(linetype='Realm', color = "Memory Effect") + 
+    ylim(c(0, 1)) + guides(linetype = FALSE) +
+    theme_bw() + scale_colour_manual(values = c("darkgreen", "red"))
+  
+  
   ## limit data frame to desired variables
   Raster_df2 <- data.frame(X = Raster_df[, which(colnames(Raster_df) == X)],
-                          Y = Raster_df[, which(colnames(Raster_df) == Y)],
-                          REALM = Raster_df$REALM,
-                          BIOME = Raster_df$BIOME,
-                          RELBIO = Raster_df$RELBIO)
-  
+                           Y = Raster_df[, which(colnames(Raster_df) == Y)],
+                           REALM = Raster_df$REALM,
+                           BIOME = Raster_df$BIOME,
+                           RELBIO = Raster_df$RELBIO)
   ### REALMS ---
   NDVI_null <- glm(Y ~ 1, data = Raster_df2)
   NDVI_glm <- glm(Y ~ X*REALM, data = Raster_df2)
   anova(NDVI_null, NDVI_glm)
-  ### PLOTTING
-  p_REALMS <- ggplot(Raster_df2, aes(x = X, y = Y, linetype = factor(REALM))) + 
-    stat_smooth(method="lm", se = TRUE) + 
-    labs(x = X, y = Y) +
-    labs(linetype='Realm') + 
-    ylim(c(0, 1)) +
-    theme_bw() + scale_color_jcolors(palette = "pal5")
-  
   ### BIOMES in REALMS ---
   NDVI_null <- glm(Y ~ 1, data = Raster_df2)
   NDVI_glm <- glm(Y ~ X*RELBIO, data = Raster_df2)
@@ -413,9 +424,10 @@ Fun_PlotReg <- function(){
                     labels = c("A", "B"),
                     hjust = -1,
                     nrow = 1)
+  legend_a <- get_legend(p_REALMS + theme(legend.position="bottom"))
   legend_b <- get_legend(p_RELBIO + theme(legend.position="bottom"))
-  p <- plot_grid( prow, legend_b, ncol = 1, rel_heights = c(1, .35))
-  ggsave(p, file=paste(Dir.Plots, "/RegionalDifferences1.jpeg", sep = ""), width = 32, height = 21, units = "cm", quality = 100)
+  p <- plot_grid(prow, legend_a, legend_b, ncol = 1, rel_heights = c(1, .07, .35))
+  ggsave(p, file=paste(Dir.Plots, "/RegionalDifferencesTEST.jpeg", sep = ""), width = 32, height = 21, units = "cm", quality = 100)
   
   ### INTRINSIC ~ LAG SOIL ----
   X = "Lag Qsoil1"
