@@ -173,31 +173,11 @@ Fun_Plot <- function(Region, Scaled = FALSE){
                                col.list[[5]], col.list[[6]], col.list[[7]]))
   ggsave(plot = P_Diag, file=paste(Dir.Plots, "/", Region, "_VarParDiag.jpeg", sep = ""), width = 32, height = 22, units = "cm", quality = 100)
 
-  P_Box <- ggplot(data = plot_df, aes(y = Data, x = Variance, fill = Variance)) + geom_boxplot() + theme_bw(base_size= 25) + xlab("Raster Cells") + ylab("Variance") +
+  P_Box <- ggplot(data = plot_df, aes(y = Data, x = Variance, fill = Variance)) + geom_boxplot() + theme_bw(base_size= 25) + xlab("Variable Components") + ylab("Proportion Variance Explained") +
     scale_fill_manual(values=c(col.list[[1]], col.list[[2]], col.list[[3]], col.list[[4]],
                                col.list[[5]], col.list[[6]], col.list[[7]])) +
-    theme(axis.text.x = element_text(size=7, angle=-30))
+    theme(axis.text.x = element_text(size=20, angle=-30)) + theme(legend.position = "none")
   ggsave(plot = P_Box, file=paste(Dir.Plots, "/", Region, "_VarParBox.jpeg", sep = ""), width = 32, height = 22, units = "cm", quality = 100)
-  # P_VarsA <- P_Diag +
-  #   annotation_custom(
-  #     grob = ggplotGrob(P_Box + theme(legend.position = "none", 
-  #                                     axis.title.x = element_blank(),
-  #                                     axis.title.y = element_blank())),
-  #     xmin = 0,
-  #     xmax = ceiling(quantile(plot_df$Cell, .7)),
-  #     ymin = .15,
-  #     ymax = .5
-  #   )
-  # P_VarsB <- P_Box +
-  #   annotation_custom(
-  #     grob = ggplotGrob(P_Diag + theme(legend.position = "none", 
-  #                                      axis.title.x = element_blank(),
-  #                                      axis.title.y = element_blank())),
-  #     xmin = 1.1,
-  #     xmax = 6.9,
-  #     ymin = .1,
-  #     ymax = .25
-  #   )
   
   # Maps
   col.varpar1 <- got(n = 100, alpha = 1, begin = 0.2, end = 1, direction = -1, option = "wildfire")
