@@ -142,6 +142,61 @@ Fun_Plot <- function(Region, Scaled = FALSE){
   } # plotting loop
   if(Scaled == TRUE){dev.off()}
   
+  if(Scaled == TRUE){
+    AUS_shp <- Countries[which(Countries$NAME_SORT == "Australia"),]
+    AUS_ras <- crop(plot_ras, extent(c(extent(AUS_shp)[1], extent(AUS_shp)[2], -40, -12)))
+    Countries_AU <- crop(Countries, extent(c(extent(AUS_shp)[1], extent(AUS_shp)[2], -40, -12)))
+    jpeg(file=paste(Dir.Plots, "/", Region, "_SCALEDAUS.jpeg", sep = ""), width = width*1.5, height = height, units = "cm", quality = 100, res = 1000)
+    par(mfrow = c(1,3), mai = c(.7, 0, 0.2, 0))
+    smaplot <- c(.02, .98, .1, .15)
+    for(Plot in c(2,3,4)){
+      mainTit <- IndTitles[Plot]
+      if(Plot == 1){
+        # plot(Countries, axes = FALSE, main = "Model AICs", col="#f2f2f2", bg="black", lwd=0.25)
+        plot(abs(AUS_ras[[1]]), col=col.sigposa, legend=FALSE, axes=FALSE, add = TRUE)
+        plot(abs(AUS_ras[[1]]), legend.only=TRUE, col=col.sigposa, colNA = "black", 
+             smallplot=smaplot, horizontal = TRUE, axis.args=list(cex.axis=1))
+      }else{
+        if(Plot == 4 | Plot == 6){ # memory length
+          plot(Countries_AU, axes = FALSE, main = mainTit, col="#f2f2f2", bg="black", lwd=0.25)
+          plot(AUS_ras[[Plot]], col = col.lags, axes=FALSE, add = TRUE, legend = FALSE)
+          plot(abs(AUS_ras[[Plot]]), legend.only=TRUE, col=col.lags, colNA = "black", 
+               smallplot=smaplot, horizontal = TRUE, axis.args=list(cex.axis=1))
+        }else{ # memory strength
+          ## data
+          Neg_ras <- AUS_ras[[Plot]]
+          Neg_ras[which(values(Neg_ras) >= 0)] <- NA
+          Pos_ras <- AUS_ras[[Plot]]
+          Pos_ras[which(values(Pos_ras) < 0)] <- NA
+          min <- min(values(AUS_ras[[Plot]]), na.rm = TRUE)
+          max <- max(values(AUS_ras[[Plot]]), na.rm = TRUE)
+          range <- abs(min) + max
+          ## plotting
+          plot(Countries_AU, axes = FALSE, main = mainTit, col="#f2f2f2", bg="black", lwd=0.25)
+          plot(Neg_ras, col=col.signeg, legend=FALSE, axes=FALSE, add = TRUE)
+          plot(Pos_ras, col=col.sigpos, legend=FALSE, axes=FALSE, add = TRUE) 
+          ## legend
+          if(Plot == 2){
+            smallplotxpos <- c(.02,.98, .1, .15) # where to put colour scales
+            r <- raster(ncol=10, nrow=10) 
+            values(r) <- seq(from = 0, to = maxValue(Pos_ras), length=length(r))
+            plot(r, legend.only=TRUE, col=col.sigpos, smallplot=smallplotxpos, horizontal = TRUE, axis.args=list(cex.axis=1))
+          }else{
+            minsegment <- .9 * abs(min)/range
+            smallplotxpos <- c(.02+minsegment,.98, .1, .15) # where to put colour scales
+            smallplotxneg <- c(0.02,.05+minsegment, .1, .15) # where to put colour scales
+            r <- raster(ncol=10, nrow=10) 
+            values(r) <- seq(from = if(is.na(minValue(Neg_ras))){0}else{minValue(Neg_ras)}, to = 0, length=length(r))
+            plot(r, legend.only=TRUE, col=col.signeg, colNA = "black", smallplot=smallplotxneg, horizontal = TRUE, axis.args=list(cex.axis=1))
+            values(r) <- seq(from = 0, to = maxValue(Pos_ras), length=length(r))
+            plot(r, legend.only=TRUE, col=col.sigpos, smallplot=smallplotxpos, horizontal = TRUE, axis.args=list(cex.axis=1))
+          }
+        } # memory strength
+      } # memory length
+    } # plotting loop
+    dev.off()
+  }
+  
   # ##------- VARIANCE PARTITIONING -------
   ## Plotting Setup
   col.list <- as.list(c(got(n = 3, alpha = 1, begin = 0.2, end = 1, direction = 1, option = "tyrell"),
