@@ -107,10 +107,33 @@ Fun_Plot <- function(Region, Scaled = FALSE){
         plot(abs(plot_ras[[Plot]]), legend.only=TRUE, col=col.lags, colNA = "black", 
              smallplot=smaplot, horizontal = TRUE, axis.args=list(cex.axis=1))
       }else{ # memory strength
+        ## data
+        Neg_ras <- plot_ras[[Plot]]
+        Neg_ras[which(values(Neg_ras) >= 0)] <- NA
+        Pos_ras <- plot_ras[[Plot]]
+        Pos_ras[which(values(Pos_ras) < 0)] <- NA
+        min <- min(values(plot_ras[[Plot]]), na.rm = TRUE)
+        max <- max(values(plot_ras[[Plot]]), na.rm = TRUE)
+        range <- abs(min) + max
+        ## plotting
         plot(Countries, axes = FALSE, main = mainTit, col="#f2f2f2", bg="black", lwd=0.25)
-        plot(plot_ras[[Plot]], col=col.sigpos, legend=FALSE, axes=FALSE, add = TRUE)
-        plot(plot_ras[[Plot]], legend.only=TRUE, col=col.sigpos, colNA = "black", 
-             smallplot=smaplot, horizontal = TRUE, axis.args=list(cex.axis=1))
+        plot(Neg_ras, col=col.signeg, legend=FALSE, axes=FALSE, add = TRUE)
+        plot(Pos_ras, col=col.sigpos, legend=FALSE, axes=FALSE, add = TRUE) 
+        ## legend
+        if(Scaled == FALSE){
+          minsegment <- .805 * abs(min)/range
+          smallplotxpos <- c(.13+minsegment,.935,.22,.25) # where to put colour scales
+          smallplotxneg <- c(0.13,.13+minsegment,.22,.25) # where to put colour scales
+        }else{
+          minsegment <- .96 * abs(min)/range
+          smallplotxpos <- c(0.02+minsegment,.98,.17,.22) # where to put colour scales
+          smallplotxneg <- c(0.02,.02+minsegment,.17,.22) # where to put colour scales
+        }
+        r <- raster(ncol=10, nrow=10) 
+        values(r) <- seq(from = minValue(Neg_ras), to = 0, length=length(r))
+        plot(r, legend.only=TRUE, col=col.signeg, colNA = "black", smallplot=smallplotxneg, horizontal = TRUE, axis.args=list(cex.axis=1))
+        values(r) <- seq(from = 0, to = maxValue(Pos_ras), length=length(r))
+        plot(r, legend.only=TRUE, col=col.sigpos, smallplot=smallplotxpos, horizontal = TRUE, axis.args=list(cex.axis=1))
       } # memory strength
     } # memory length
     if(Scaled == FALSE){
@@ -128,20 +151,51 @@ Fun_Plot <- function(Region, Scaled = FALSE){
     smaplot <- c(.02, .98, .1, .15)
     for(Plot in c(2,3,4)){
       mainTit <- IndTitles[Plot]
-        if(Plot == 4){ # memory length
+      if(Plot == 1){
+        # plot(Countries, axes = FALSE, main = "Model AICs", col="#f2f2f2", bg="black", lwd=0.25)
+        plot(abs(AUS_ras[[1]]), col=col.sigposa, legend=FALSE, axes=FALSE, add = TRUE)
+        plot(abs(AUS_ras[[1]]), legend.only=TRUE, col=col.sigposa, colNA = "black", 
+             smallplot=smaplot, horizontal = TRUE, axis.args=list(cex.axis=1))
+      }else{
+        if(Plot == 4 | Plot == 6){ # memory length
           plot(Countries_AU, axes = FALSE, main = mainTit, col="#f2f2f2", bg="black", lwd=0.25)
           plot(AUS_ras[[Plot]], col = col.lags, axes=FALSE, add = TRUE, legend = FALSE)
           plot(abs(AUS_ras[[Plot]]), legend.only=TRUE, col=col.lags, colNA = "black", 
                smallplot=smaplot, horizontal = TRUE, axis.args=list(cex.axis=1))
         }else{ # memory strength
+          ## data
+          Neg_ras <- AUS_ras[[Plot]]
+          Neg_ras[which(values(Neg_ras) >= 0)] <- NA
+          Pos_ras <- AUS_ras[[Plot]]
+          Pos_ras[which(values(Pos_ras) < 0)] <- NA
+          min <- min(values(AUS_ras[[Plot]]), na.rm = TRUE)
+          max <- max(values(AUS_ras[[Plot]]), na.rm = TRUE)
+          range <- abs(min) + max
+          ## plotting
           plot(Countries_AU, axes = FALSE, main = mainTit, col="#f2f2f2", bg="black", lwd=0.25)
-          plot(AUS_ras[[Plot]], col=col.sigpos, legend=FALSE, axes=FALSE, add = TRUE)
-          plot(AUS_ras[[Plot]], legend.only=TRUE, col=col.sigpos, colNA = "black", 
-               smallplot=smaplot, horizontal = TRUE, axis.args=list(cex.axis=1))
+          plot(Neg_ras, col=col.signeg, legend=FALSE, axes=FALSE, add = TRUE)
+          plot(Pos_ras, col=col.sigpos, legend=FALSE, axes=FALSE, add = TRUE) 
+          ## legend
+          if(Plot == 2){
+            smallplotxpos <- c(.02,.98, .1, .15) # where to put colour scales
+            r <- raster(ncol=10, nrow=10) 
+            values(r) <- seq(from = 0, to = maxValue(Pos_ras), length=length(r))
+            plot(r, legend.only=TRUE, col=col.sigpos, smallplot=smallplotxpos, horizontal = TRUE, axis.args=list(cex.axis=1))
+          }else{
+            minsegment <- .96 * abs(min)/range
+            smallplotxpos <- c(.035+minsegment,.98, .1, .15) # where to put colour scales
+            smallplotxneg <- c(0.02,.02+minsegment, .1, .15) # where to put colour scales
+            r <- raster(ncol=10, nrow=10) 
+            values(r) <- seq(from = if(is.na(minValue(Neg_ras))){0}else{minValue(Neg_ras)}, to = 0, length=length(r))
+            plot(r, legend.only=TRUE, col=col.signeg, colNA = "black", smallplot=smallplotxneg, horizontal = TRUE, axis.args=list(cex.axis=1))
+            values(r) <- seq(from = 0, to = maxValue(Pos_ras), length=length(r))
+            plot(r, legend.only=TRUE, col=col.sigpos, smallplot=smallplotxpos, horizontal = TRUE, axis.args=list(cex.axis=1))
+          }
         } # memory strength
       } # memory length
-    dev.off()
     } # plotting loop
+    dev.off()
+  }
   
   # ##------- VARIANCE PARTITIONING -------
   ## Plotting Setup
@@ -173,7 +227,7 @@ Fun_Plot <- function(Region, Scaled = FALSE){
     scale_fill_manual(values=c(col.list[[1]], col.list[[2]], col.list[[3]], col.list[[4]],
                                col.list[[5]], col.list[[6]], col.list[[7]]))
   ggsave(plot = P_Diag, file=paste(Dir.Plots, "/", Region, "_VarParDiag.jpeg", sep = ""), width = 32, height = 22, units = "cm", quality = 100)
-
+  
   P_Box <- ggplot(data = plot_df, aes(y = Data, x = Variance, fill = Variance)) + geom_boxplot() + theme_bw(base_size= 25) + xlab("Variable Components") + ylab("Proportion Variance Explained") +
     scale_fill_manual(values=c(col.list[[1]], col.list[[2]], col.list[[3]], col.list[[4]],
                                col.list[[5]], col.list[[6]], col.list[[7]])) +
@@ -337,9 +391,9 @@ Fun_PlotReg <- function(){
   ### RECODING ABBREVIATIONS ---
   Abbr_Realms <- levels(wwf@data[["REALM"]])
   Full_Realms <- c("Australasia", "Antarctic", "Afrotropics", "IndoMalay", "Nearctic", "Neotropics", "Oceania", "Palearctic")
- for(Iter_Realms in 1:length(Abbr_Realms)){
-   Raster_df$REALM[which(Raster_df$REALM == Abbr_Realms[Iter_Realms])] <- Full_Realms[Iter_Realms]
- }
+  for(Iter_Realms in 1:length(Abbr_Realms)){
+    Raster_df$REALM[which(Raster_df$REALM == Abbr_Realms[Iter_Realms])] <- Full_Realms[Iter_Realms]
+  }
   
   Abbr_Biomes <- 1:18
   Full_Biomes <- c("Tropical & Subtropical Moist Broadleaf Forests",
@@ -360,6 +414,61 @@ Fun_PlotReg <- function(){
     Raster_df$BIOME[which(Raster_df$BIOME == Abbr_Biomes[Iter_Biomes])] <- Full_Biomes[Iter_Biomes]
   }
   
+  ### TOTAL EXPLAINED VARIANCE ~ INTRINSIC ----
+  X = "NDVI [t-1]"
+  Y = "Total Explained Variance"
+  Z = "Tair"
+  ## limit data frame to desired variables
+  Raster_df2 <- data.frame(X = rep(Raster_df[, which(colnames(Raster_df) == Y)], 2),
+                           Y = c(Raster_df[, which(colnames(Raster_df) == X)], Raster_df[, which(colnames(Raster_df) == Z)]),
+                           Effect = rep(c(X, Z), each = length(Raster_df[, which(colnames(Raster_df) == Y)])),
+                           REALM = rep(Raster_df$REALM, 2),
+                           BIOME = rep(Raster_df$BIOME, 2),
+                           RELBIO = rep(Raster_df$RELBIO, 2))
+  
+  ### PLOTTING
+  p_REALMS <- ggplot(Raster_df2, aes(x = Y, y = X, linetype = factor(REALM), color = as.factor(Effect))) + 
+    stat_smooth(method="lm", se = TRUE) + 
+    labs(x = "Effect Size", y = Y) +
+    labs(linetype='Realm', color = "Memory Effect") + 
+    ylim(c(0, 1)) + guides(linetype = FALSE) +
+    theme_bw() + scale_colour_manual(values = c("darkgreen", "red"))
+  
+  
+  ## limit data frame to desired variables
+  Raster_df2 <- data.frame(X = Raster_df[, which(colnames(Raster_df) == X)],
+                           Y = Raster_df[, which(colnames(Raster_df) == Y)],
+                           REALM = Raster_df$REALM,
+                           BIOME = Raster_df$BIOME,
+                           RELBIO = Raster_df$RELBIO)
+  ### REALMS ---
+  NDVI_null <- glm(Y ~ 1, data = Raster_df2)
+  NDVI_glm <- glm(Y ~ X*REALM, data = Raster_df2)
+  anova(NDVI_null, NDVI_glm)
+  ### BIOMES in REALMS ---
+  NDVI_null <- glm(Y ~ 1, data = Raster_df2)
+  NDVI_glm <- glm(Y ~ X*RELBIO, data = Raster_df2)
+  anova(NDVI_null, NDVI_glm)
+  ### PLOTTING
+  p_RELBIO <- ggplot(Raster_df2, aes(x = X, y = Y, color = factor(BIOME), linetype = factor(REALM))) + 
+    stat_smooth(method="lm", se = TRUE) + 
+    labs(x = X, y = Y) +
+    labs(color='Biome', linetype = "Realm") + 
+    ylim(c(0, 1)) +
+    theme_bw() + scale_color_viridis(discrete = TRUE, option = "D") +
+    guides(color=guide_legend(nrow = 5), linetype=guide_legend(nrow = 6))
+  
+  prow <- plot_grid(p_REALMS + theme(legend.position='none'), 
+                    p_RELBIO + theme(legend.position='none'), 
+                    align = 'vh',
+                    labels = c("A", "B"),
+                    hjust = -1,
+                    nrow = 1)
+  legend_a <- get_legend(p_REALMS + theme(legend.position="bottom"))
+  legend_b <- get_legend(p_RELBIO + theme(legend.position="bottom"))
+  p <- plot_grid(prow, legend_a, legend_b, ncol = 1, rel_heights = c(1, .07, .35))
+  ggsave(p, file=paste(Dir.Plots, "/RegionalDifferencesTEST.jpeg", sep = ""), width = 32, height = 21, units = "cm", quality = 100)
+  
   ### INTRINSIC ~ LAG SOIL ----
   X = "Lag Qsoil1"
   Y = "NDVI [t-1]"
@@ -376,14 +485,14 @@ Fun_PlotReg <- function(){
   anova(NDVI_null, NDVI_glm)
   ### PLOTTING
   p1_REALMS <- ggplot(Raster_df2, aes(x = X, y = Y, linetype = factor(REALM), linewidth = 2)) + 
-    stat_smooth(method="lm", se = TRUE, size = 1.2)
+    stat_smooth(method="lm", se = TRUE, size = 1.2) + 
     labs(x = X, y = Y) +
     labs(linetype='Realm') +
     theme_bw()
   
   ### BIOMES in REALMS ---
   Raster_df3 <- Raster_df2[which(Raster_df2$REALM == "Australasia"), ] # limiting to just one realm
- 
+  
   NDVI_null <- glm(Y ~ 1, data = Raster_df3)
   NDVI_glm <- glm(Y ~ X*BIOME, data = Raster_df3)
   anova(NDVI_null, NDVI_glm)
@@ -395,10 +504,10 @@ Fun_PlotReg <- function(){
     theme_bw()  + scale_color_viridis(discrete = TRUE, option = "D")
   
   g <- plot_grid(p1_REALMS, 
-                    p1_RELBIO, 
-                    align = 'vh',
-                    labels = c("A", "B"),
-                    hjust = -1,
-                    nrow = 2)
+                 p1_RELBIO, 
+                 align = 'vh',
+                 labels = c("A", "B"),
+                 hjust = -1,
+                 nrow = 2)
   ggsave(g, file=paste(Dir.Plots, "/RegionalDifferences2.jpeg", sep = ""), width = 32, height = 18, units = "cm", quality = 100)
 } # end of function
