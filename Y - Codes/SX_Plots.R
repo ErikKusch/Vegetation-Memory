@@ -223,6 +223,7 @@ Fun_Plot <- function(Region, Scaled = FALSE){
   
   # ##------- MAPVIEW -------
   ## EFFECTS
+  Raster <- brick(paste(Dir.Memory, "/", Region, ".nc", sep=""))
     Raster[which(values(Raster[[15]]) > .05)] <- NA
     col.mapview <- col.sigposa
     m0_c <- mapview(Countries, color = "black", alpha.regions = 0)
