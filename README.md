@@ -19,7 +19,6 @@ We show that (1) dryland regions are characterised by strong vegetation memory (
 ## COLLABORATORS:
 - Alistair Seddon (University of Bergen)  
 - Richard Davy (Nansen Environmental and Remote Sensing Center)  
-- Roberto Salgeuro-Goméz (University of Oxford)  
 
 ## FUNDING:
 - Fast-Track Initiative (Bjerknes Center)  
