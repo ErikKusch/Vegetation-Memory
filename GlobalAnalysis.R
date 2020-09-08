@@ -219,7 +219,4 @@ writeRaster(Big_ras, "GlobalDrylands.nc", format="CDF") # saving data
 rm(ls)
 rm(Big_ras)
 
-Fun_Plots(Region = "GlobalDrylands", Scaled = FALSE)
 Fun_Plots(Region = "GlobalDrylands", Scaled = TRUE)
-
-Fun_PlotReg()
