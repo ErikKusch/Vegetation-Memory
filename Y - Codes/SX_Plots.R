@@ -12,7 +12,7 @@ Fun_Plot <- function(Region, Scaled = FALSE){
   Raster <- crop(Raster, extent(Drylands))
   Back <- crop(Back, extent(Drylands))
   Countries <- crop(Countries, extent(Drylands))
-  ####--------------- MISC ----------------
+  ####--------------- MISC ---------------- 
   SR_Titles <- list("NDVI[t-1]", "Air Temperature", "Soil Moisture (0-7cm)")
   height <- 11
   width <- 16
