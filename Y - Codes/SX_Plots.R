@@ -225,7 +225,7 @@ Fun_Plot <- function(Region, Scaled = FALSE){
   ## EFFECTS
   Raster <- brick(paste(Dir.Memory, "/", Region, ".nc", sep=""))
     Raster[which(values(Raster[[15]]) > .05)] <- NA
-    col.mapview <- col.sigposa
+    col.mapview <- col.sigpos
     m0_c <- mapview(Countries, color = "black", alpha.regions = 0)
     # m1_c <- mapview(layer.name = "Model AICs", 
     #                 abs(Raster[[1]]), legend = TRUE, col.regions = col.sigpos, maxpixels =  5755680, na.color = "#FFFFFF00")
