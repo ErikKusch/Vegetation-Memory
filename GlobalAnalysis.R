@@ -19,7 +19,7 @@ ModVars <- c("Tair", "Qsoil1")
 ###---------------- FUNCTIONS ---------------------------------------------------------
 ####--------------- GlobalDrylands [numberofCores]
 # (Breaking up global dryland shapefile into bands and enact vegetation memory function) ----
-GlobalDrylands <- function(numberOfCores = 4){
+GlobalDrylands <- function(numberOfCores = 13){
   cl <- makeCluster(numberOfCores) # Assuming X node cluster
   registerDoParallel(cl) # registering cores
   setwd(Dir.Mask)
@@ -39,10 +39,16 @@ GlobalDrylands <- function(numberOfCores = 4){
     source(paste("Y - Codes", "S0a_Packages.R", sep="/")) # load packages to each core
     source(paste("Y - Codes", "S0b_Directories.R", sep="/")) # set packages for each core
     source(paste(Dir.Codes, "S0c_Functions.R", sep="/")) # Loading misc functions
+    if(file.exists("Y - Codes/PersonalSettings.R")){
+      source("Y - Codes/PersonalSettings.R") # Loading miscellaneous functions 
+    }else{
+      API_User <- readline("ECMWF API User:")
+      API_Key <- readline("ECMWF API Key:")
+    }
     
     ####--------------- Fun_Vegetation [Regions, RegionFiles, Extents, From, To, Lags, Cores]
     # (selecting and preparing data, and calculating vegetation memory) ----
-    Fun_Vegetation <- function(Regions, RegionFiles, Extents, From, To, Lags, Cores) {
+    Fun_Vegetation <- function(Regions, RegionFiles, Extents, From, To, Lags, Cores, Para) {
       FromY <- (From - ceiling(1/12 * max(Lags))) # Figuring out real start year after factoring in lags
       ##### GIMMs NDVI -----
       print("++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++")
@@ -76,6 +82,7 @@ GlobalDrylands <- function(numberOfCores = 4){
         CombineCDFs(Region = Regions[[CombineRun]], RegionFile = RegionFiles[[CombineRun]],
                     Extent = Extents[[CombineRun]])
       } # CombineCDFs
+      Region_ras <- raster(paste(Dir.Gimms.Monthly, "/NDVI_", RegionFiles, ".nc", sep = ""))
       
       ##### ERA5 -----
       print("++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++")
@@ -85,71 +92,24 @@ GlobalDrylands <- function(numberOfCores = 4){
       source(paste(Dir.Codes, "S2_ERA5.R", sep="/"))
       
       for(Krigrun in 1:length(ModVars)){
-        if(!file.exists(file.path(Dir.ERA, paste0(ModVars[Krigrun], "_GlobalDrylands.nc")))){
-          RasterEra5(Variable = ModVars[[Krigrun]], Region = Drylands,
-                     RegionFile = "GlobalDrylands",
-                     FromY = FromY, FromM = 1, ToY = To, ToM = 12) 
+        if(!file.exists(file.path(Dir.ERA, paste0(ModVars[Krigrun], "_", RegionFiles, ".nc")))){
+          ResampERA <- RasterEra5(Variable = ModVars[[Krigrun]], 
+                                  Region = extent(Region_ras),
+                                  RegionFile = RegionFiles,
+                                  FromY = FromY, 
+                                  FromM = 1, 
+                                  ToY = To, 
+                                  ToM = 12) 
+          ResampERA2 <- resample(ResampERA, Region_ras) 
+          ResampERA3 <- mask(ResampERA2, crop(Drylands, extent(Region_ras)))
+          writeRaster(x = ResampERA3, filename = file.path(Dir.ERA, paste0(ModVars[Krigrun], "_", RegionFiles, ".nc")),
+                      format = "CDF", overwrite = TRUE)
         }else{
           print(paste("ERA5-Land data already downloaded for", ModVars[Krigrun]))
         }
       }
-      
-      
-      GlobNDVI <- raster(paste(Dir.Gimms.Monthly, "/GlobalNDVI_", froms[RasGimms], tos[RasGimms], ".nc", sep=""))
-      GlobSAT <- stack(file.path(Dir.ERA, "Tair_GlobalDrylands.nc"))
-      GlobQsoil <- stack(file.path(Dir.ERA, "Qsoil1_GlobalDrylands.nc"))
-      
-      stop("CHECK IF GRID SYSTEM OF ERA5-LAND MATCHES WITH NDVI GRID. RESAMPLE IF NECESSARY")
-      res(GlobNDVI)
-      res(GlobSAT)
-      
-      
-      
-      # # kriging ERA5 variable data across study regions for selected time period
-      # # parallel
-      # if (Cores > 1) {
-      #   cl <- makeCluster(Cores) # Assuming X node cluster
-      #   registerDoParallel(cl) # Register cores
-      #   for (KrigRegion in 1:length(Regions)) {
-      #     # looping over regions
-      #     print("#################################################")
-      #     print(paste("Kriging ERA5 ", toString(ModVars), " data from across ",
-      #                 RegionFiles[[KrigRegion]], sep = ""))
-      #     foreach(Krigrun = 1:length(ModVars)) %dopar% {
-      #       # looping over variables
-      #       source(paste("Y - Codes", "S0a_Packages.R", sep="/")) # load packages to each core
-      #       source(paste("Y - Codes", "S0b_Directories.R", sep="/")) # set packages for each core
-      #       source(paste(Dir.Codes, "S0c_Functions.R", sep="/")) # Loading miscellaneous functions
-      #       source(paste(Dir.Codes, "S2_ERA5.R", sep="/")) # source function for each core
-      #       ModVars <- c("Tair", "Qsoil1", "Qsoil2", "Qsoil3", "Qsoil4")
-      #       # Checking if this particular data has been kriged already
-      #       if (!file.exists(paste(Dir.ERA, "/", ModVars[[Krigrun]],
-      #                              "_mean_", RegionFiles[[KrigRegion]], "_", 1, FromY, "_", 12, To,
-      #                              ".nc", sep = "")))
-      #       {
-      #         sapply(package_vec, install.load.package)
-      #         RasterEra5(Variable = ModVars[[Krigrun]], Region = Regions[[KrigRegion]],
-      #                    RegionFile = RegionFiles[[KrigRegion]], Extent = Extents[[KrigRegion]],
-      #                    FromY = FromY, FromM = 1, ToY = To, ToM = 12, Temporary = "Keep")
-      #       } # check if already kriged
-      #     } # parallel run
-      #   } # Region-loop
-      #   stopCluster(cl) # stop cluster
-      # } else {
-      #   # non-parallel looping over regions looping over variables Checking if this
-      #   # particular data has been kriged already
-      #   for (KrigRegion in 1:length(Regions)) {
-      #     for (Krigrun in 1:length(ModVars)) {
-      #       if (file.exists(paste(Dir.ERA, "/", ModVars[[Krigrun]], "_mean_",
-      #                             RegionFiles[[KrigRegion]], "_", 1, FromY, "_", 12, To, ".nc", sep = ""))) {
-      #         print(paste(ModVars[[Krigrun]], " data already kriged for: ", RegionFiles[[KrigRegion]],
-      #                     sep = ""))
-      #         (next)()
-      #       }
-      # 
-      #     } # Variable-loop
-      #   } # region-loop
-      # } # RasterEra5 function
+      try(unlink(file.path(Dir.ERA, RegionFiles), recursive = TRUE))
+    
       ##### VEGETATION MEMORY -----
       print("++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++")
       print("IDENTIFYING VEGETATION MEMORY")
@@ -204,14 +164,14 @@ GlobalDrylands <- function(numberOfCores = 4){
         } # region-loop
       } # VegMem function
     } # Fun_Vegetation
-    
+
     ModVars <- c("Tair", "Qsoil1")
     # ClimVars = list("Qsoil1_mean", "Qsoil2_mean", "Qsoil3_mean", "Qsoil4_mean")
     # ClimVars2 = list("Tair_mean", "Tair_mean", "Tair_mean", "Tair_mean")
     Fun_Vegetation(Regions = Regions[[Para]],
                    RegionFiles = RegionFiles[[Para]],
                    Extents = list(Extents[[Para]]),
-                   From = 1982, To = 2015, Lags = 0:12, Cores = 1)
+                   From = 1982, To = 2015, Lags = 0:12, Cores = 1, Para = Para)
   }
   stopCluster(cl)
 }
@@ -227,7 +187,9 @@ Fun_Plots <- function(Region, Scaled){
 } # Fun_Plots
 
 ####--------------- FUNCTION CALLS ----
-GlobalDrylands(numberOfCores = detectCores())
+GlobalDrylands(numberOfCores = 4
+  # numberOfCores = detectCores()
+  )
 
 ## making a global raster of memory effects
 setwd(Dir.Memory)

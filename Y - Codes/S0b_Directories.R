@@ -11,6 +11,7 @@ Dir.Gimms.Monthly <- paste(Dir.Data, "/1b - GIMMs_Monthly", sep="")
 if(!dir.exists(Dir.Gimms.Monthly)){dir.create(Dir.Gimms.Monthly)}
 # WORKING DIRECTORY FOR RAW ERA5 DATA
 Dir.ERA <- paste(Dir.Data, "/2 - ERA5-Land", sep="")
+if(!dir.exists(Dir.ERA)){dir.create(Dir.ERA)}
 # # WORKING DIRECTORY FOR PROCESSED ERA5 DATA
 # Dir.ERA.Monthly <- paste(Dir.Data, "/2b - ERA5_Monthly", sep="")
 # if(!dir.exists(Dir.ERA.Monthly)){dir.create(Dir.ERA.Monthly)}
