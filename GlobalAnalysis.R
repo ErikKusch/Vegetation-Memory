@@ -153,7 +153,7 @@ GlobalDrylands <- function(numberOfCores = 13){
             if (paste(RegionFiles[[MemReg]], "_Tair_mean-", ModVars[Memrun],
                       "_mean", paste(Lags, collapse = "_"), "_", FromY, "-", To, ".nc",
                       sep = "") %nin% list.files(Dir.Memory)) {
-              VegMem(ClimVar = paste(ModVars[Memrun], "_mean", sep = ""), ClimVar2 = "Tair_mean",
+              VegMem(ClimVar = ModVars[Memrun], ClimVar2 = "Tair",
                      Region = RegionFiles[[MemReg]], Cumlags = Lags, FromY = FromY,
                      ToY = To)
             } else {
@@ -168,10 +168,12 @@ GlobalDrylands <- function(numberOfCores = 13){
     ModVars <- c("Tair", "Qsoil1")
     # ClimVars = list("Qsoil1_mean", "Qsoil2_mean", "Qsoil3_mean", "Qsoil4_mean")
     # ClimVars2 = list("Tair_mean", "Tair_mean", "Tair_mean", "Tair_mean")
+    Begin_time <- Sys.time()
     Fun_Vegetation(Regions = Regions[[Para]],
                    RegionFiles = RegionFiles[[Para]],
                    Extents = list(Extents[[Para]]),
                    From = 1982, To = 2015, Lags = 0:12, Cores = 1, Para = Para)
+    End_time <- Sys.time()
   }
   stopCluster(cl)
 }
@@ -187,7 +189,7 @@ Fun_Plots <- function(Region, Scaled){
 } # Fun_Plots
 
 ####--------------- FUNCTION CALLS ----
-GlobalDrylands(numberOfCores = 4
+GlobalDrylands(numberOfCores = 7
   # numberOfCores = detectCores()
   )
 
