@@ -150,8 +150,8 @@ GlobalDrylands <- function(numberOfCores = 13){
         # check if already computed
         for (MemReg in 1:length(Regions)) {
           for (Memrun in 2:length(ModVars)) {
-            if (paste(RegionFiles[[MemReg]], "_Tair_mean-", ModVars[Memrun],
-                      "_mean", paste(Lags, collapse = "_"), "_", FromY, "-", To, ".nc",
+            if (paste(RegionFiles[[MemReg]], "_Tair-", ModVars[Memrun],
+                      paste(Lags, collapse = "_"), "_", FromY, "-", To, ".nc",
                       sep = "") %nin% list.files(Dir.Memory)) {
               VegMem(ClimVar = ModVars[Memrun], ClimVar2 = "Tair",
                      Region = RegionFiles[[MemReg]], Cumlags = Lags, FromY = FromY,
@@ -189,7 +189,8 @@ Fun_Plots <- function(Region, Scaled){
 } # Fun_Plots
 
 ####--------------- FUNCTION CALLS ----
-GlobalDrylands(numberOfCores = 7
+GlobalDrylands(
+  numberOfCores = 9
   # numberOfCores = detectCores()
   )
 

@@ -47,7 +47,7 @@ VegMem <- function(ClimVar, ClimVar2, Region, Cumlags, FromY, ToY){
   for(pixel in Data_Pos){ # loop non-NA pixels
     unlink(paste(Dir.Memory, "/", Region, ".txt", sep=""), recursive = TRUE)
     sink(file = paste(Dir.Memory, "/", Region, ".txt", sep=""))
-    print(paste(pixel, max(Data_Pos), sep="_"))
+    print(paste(pbi, length(Data_Pos), sep="/"))
     sink()
     T_Begin <- Sys.time() # note time when calculation is started (needed for estimation of remaining time)
     ## DATA ----
