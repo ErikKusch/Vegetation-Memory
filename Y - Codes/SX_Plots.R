@@ -51,7 +51,7 @@ Fun_Plot <- function(Region, Scaled = FALSE){
     ggRGB(img = Triplot, r = 3, g = 1, b = 2, scale = max(maxValue(Triplot)), 
           stretch = 'none', ggLayer = TRUE) +
     ggtitle(label = "Relative Importance of Vegetation Responses") + 
-    ylab("Latitude [°]") + xlab("Longitude [°]") + 
+    ylab("Latitude") + xlab("Longitude") + 
     theme_bw(base_size = 15)
   ggsave(file=paste(Dir.Plots, "/", Region, "_RelImportance.jpeg", sep = ""), width = width, height = height, units = "cm", quality = 100)
   
