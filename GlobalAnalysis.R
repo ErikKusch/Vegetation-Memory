@@ -61,14 +61,14 @@ GlobalDrylands <- function(numberOfCores = 13){
       # if they are
       froms <- c(1982, 1986, 1991, 1996, 2001, 2006, 2011)
       tos <- c(1985, 1990, 1995, 2000, 2005, 2010, 2015)
-      for(RasGimms in 1:length(tos)){
-        if(file.exists(paste(Dir.Gimms.Monthly, "/GlobalNDVI_", froms[RasGimms], tos[RasGimms], ".nc", sep=""))){
-          print(paste("Global NDVI raster from", froms[RasGimms], "to", tos[RasGimms], "has already been established."))
-          next()
-        }else{
-          RasterGIMMs(from = froms[RasGimms], to = tos[RasGimms])
-        }
-      }
+      # for(RasGimms in 1:length(tos)){
+      #   if(file.exists(paste(Dir.Gimms.Monthly, "/GlobalNDVI_", froms[RasGimms], tos[RasGimms], ".nc", sep=""))){
+      #     print(paste("Global NDVI raster from", froms[RasGimms], "to", tos[RasGimms], "has already been established."))
+      #     next()
+      #   }else{
+      #     RasterGIMMs(from = froms[RasGimms], to = tos[RasGimms])
+      #   }
+      # }
       # Load composite NDVI data and limit to extent of a study region saving the
       # resulting data
       for (CombineRun in 1:length(Regions)) {
@@ -197,7 +197,7 @@ GlobalDrylands(
 ## making a global raster of memory effects
 setwd(Dir.Memory)
 files <- list.files()
-files <- files[grep(files, pattern = "2015.nc")][-1] # not using Drylands_1 because of data errors
+files <- files[grep(files, pattern = "2015.nc")][]
 ls <- list()# loading data
 for(i in 1:length(files)){
   ls[[i]] <- brick(files[i])

@@ -4,14 +4,27 @@ Fun_Plot <- function(Region, Scaled = FALSE){
   ####--------------- FILE SELECTION ----------------
   Raster <- brick(paste(Dir.Memory, "/", Region, ".nc", sep=""))
   Raster[which(values(Raster[[15]]) > .05)] <- NA
-  Back <- raster(paste(Dir.KrigCov, "Co-variates_NativeResolution.nc", sep="/"),
-                 varname = "Elevation")
+  Extent <- extent(Raster)
+  Link <- "https://edcintl.cr.usgs.gov/downloads/sciweb1/shared/topo/downloads/GMTED/Grid_ZipFiles/mn30_grd.zip"
+  Dir.GMTED <- file.path(mainDir, "GMTED2010")
+  if (!file.exists(file.path(Dir.GMTED, "GMTED2010.zip"))) {
+    dir.create(Dir.GMTED)
+    print("Downloading GMTED2010 covariate data for background plots.")
+    httr::GET(Link, write_disk(file.path(Dir.GMTED, "GMTED2010.zip")), 
+              progress(), overwrite = TRUE)
+    unzip(file.path(Dir.GMTED, "GMTED2010.zip"), exdir = Dir.GMTED)
+  }
+  Back <- raster(file.path(Dir.GMTED, "mn30_grd/w001001.adf"))
+  Back <- crop(Back, Extent)
+  Back <- resample(x = Back, y = Raster)
   Countries <- readOGR(Dir.Mask, "ne_50m_admin_0_countries", verbose = FALSE)
   setwd(Dir.Mask)
   Drylands <- shapefile("dryland_2")
   Raster <- crop(Raster, extent(Drylands))
-  Back <- crop(Back, extent(Drylands))
   Countries <- crop(Countries, extent(Drylands))
+  Back <- crop(Back, extent(Drylands))
+  Back <- mask(Back, Countries)
+  values(Back)[values(Back)<0] <- 0
   ####--------------- MISC ---------------- 
   SR_Titles <- list("NDVI[t-1]", "Air Temperature", "Soil Moisture (0-7cm)")
   height <- 11
