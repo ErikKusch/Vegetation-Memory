@@ -13,16 +13,16 @@ VegMem <- function(ClimVar, ClimVar2, Region, Cumlags, FromY, ToY){
   ## NDVI/GIMMs
   NDVI_ras <- brick(paste(Dir.Gimms.Monthly,"/NDVI_", Region,".nc", sep=""))
   ## ERA5
-  Clim <- list.files(Dir.ERA)[grep(pattern = ClimVar, list.files(Dir.ERA))] 
-  Clim <- Clim[grep(pattern = paste0(Region, ".nc"), Clim)] # files in target region
-  # Clim <- Clim[grep(pattern = FromY, Clim)] # files with correct start date
-  # Clim <- Clim[grep(pattern = ToY, Clim)] # files with correct end date
-  Clim_mean_ras <- brick(paste(Dir.ERA, "/", Clim, sep="")) # rasterise
-  Clim2 <- list.files(Dir.ERA)[grep(pattern = ClimVar2, list.files(Dir.ERA))]
-  Clim2 <- Clim2[grep(pattern = paste0(Region, ".nc"), Clim2)]
-  # Clim2 <- Clim2[grep(pattern = FromY, Clim2)]
-  # Clim2 <- Clim2[grep(pattern = ToY, Clim2)]
-  Clim2_mean_ras <- brick(paste(Dir.ERA, "/", Clim2, sep=""))
+  Clim <- list.files(Dir.ERA.Monthly)[grep(pattern = ClimVar, list.files(Dir.ERA.Monthly))] 
+  Clim <- Clim[grep(pattern = Region, Clim)] # files in target region
+  Clim <- Clim[grep(pattern = FromY, Clim)] # files with correct start date
+  Clim <- Clim[grep(pattern = ToY, Clim)] # files with correct end date
+  Clim_mean_ras <- brick(paste(Dir.ERA.Monthly, "/", Clim, sep="")) # rasterise
+  Clim2 <- list.files(Dir.ERA.Monthly)[grep(pattern = ClimVar2, list.files(Dir.ERA.Monthly))]
+  Clim2 <- Clim2[grep(pattern = Region, Clim2)]
+  Clim2 <- Clim2[grep(pattern = FromY, Clim2)]
+  Clim2 <- Clim2[grep(pattern = ToY, Clim2)]
+  Clim2_mean_ras <- brick(paste(Dir.ERA.Monthly, "/", Clim2, sep=""))
   # PREPARE DATA----
   ## Limit NDVI data to ERA5 time frame
   NDVIYears <- rep(1982:2015, each = 12) # Year vector to indicate months for time frame selection
@@ -46,8 +46,8 @@ VegMem <- function(ClimVar, ClimVar2, Region, Cumlags, FromY, ToY){
   pbi <- 0 # parameter for progress bar
   for(pixel in Data_Pos){ # loop non-NA pixels
     unlink(paste(Dir.Memory, "/", Region, ".txt", sep=""), recursive = TRUE)
-    sink(file = paste(Dir.Memory, "/", Region, ".txt", sep=""))
-    print(paste(pbi, length(Data_Pos), sep="/"))
+    # sink(file = paste(Dir.Memory, "/", Region, ".txt", sep=""))
+    # print(paste(pixel, max(Data_Pos), sep="_"))
     sink()
     T_Begin <- Sys.time() # note time when calculation is started (needed for estimation of remaining time)
     ## DATA ----
@@ -193,14 +193,14 @@ VegMem <- function(ClimVar, ClimVar2, Region, Cumlags, FromY, ToY){
       ps <- 1}
     ## EXPLAINED VARIANCE----
     VarPart <- with(ModData_df, modEvA::varPart(A = summary(lm(NDVI_anom ~ NDVI_Lag1))[["r.squared"]], 
-                    B = summary(lm(NDVI_anom ~ ModData_df[, PCABest[1]+4]))[["r.squared"]], 
-                    C = summary(lm(NDVI_anom ~ ModData_df[, PCABest[2]+6+length(Cumlags)]))[["r.squared"]], 
-                    AB = summary(lm(NDVI_anom ~ NDVI_Lag1+ModData_df[, PCABest[1]+4]))[["r.squared"]],
-                    BC = summary(lm(NDVI_anom ~ ModData_df[, PCABest[1]+4]))[["r.squared"]], 
-                    AC = summary(lm(NDVI_anom ~ NDVI_Lag1+ModData_df[, PCABest[2]+6+length(Cumlags)]))[["r.squared"]], 
-                    ABC = summary(lm(NDVI_anom ~ NDVI_Lag1+ModData_df[, PCABest[1]+4]+ModData_df[, PCABest[2]+6+length(Cumlags)]))[["r.squared"]], 
-                    A.name = "t-1", B.name = "Qsoil1", C.name = "Tair", main = "Memory Components", plot = FALSE)
-                    )
+                                                B = summary(lm(NDVI_anom ~ ModData_df[, PCABest[1]+4]))[["r.squared"]], 
+                                                C = summary(lm(NDVI_anom ~ ModData_df[, PCABest[2]+6+length(Cumlags)]))[["r.squared"]], 
+                                                AB = summary(lm(NDVI_anom ~ NDVI_Lag1+ModData_df[, PCABest[1]+4]))[["r.squared"]],
+                                                BC = summary(lm(NDVI_anom ~ ModData_df[, PCABest[1]+4]))[["r.squared"]], 
+                                                AC = summary(lm(NDVI_anom ~ NDVI_Lag1+ModData_df[, PCABest[2]+6+length(Cumlags)]))[["r.squared"]], 
+                                                ABC = summary(lm(NDVI_anom ~ NDVI_Lag1+ModData_df[, PCABest[1]+4]+ModData_df[, PCABest[2]+6+length(Cumlags)]))[["r.squared"]], 
+                                                A.name = "t-1", B.name = "Qsoil1", C.name = "Tair", main = "Memory Components", plot = FALSE)
+    )
     Vars <- c(1-VarPart[8,1], # total variance
               VarPart[1,1], # t-1
               VarPart[2,1], # Qsoil1 
@@ -221,7 +221,7 @@ VegMem <- function(ClimVar, ClimVar2, Region, Cumlags, FromY, ToY){
       T_End <- Sys.time() # note end time
       Duration <- as.numeric(T_End)-as.numeric(T_Begin) # calculate the time it took to establish and select models
       ## Put an estimator up on the console that tells the user when to expect the program to finish its current run
-      print(paste("Calculating Vegetation Memory effects across ", Region, " should take ", round(Duration*length(Data_Pos)/3600, 2), "h and finish around: ",
+      print(paste("Calculating Vegetation Memory effects across ", Region, " should take ", Duration*length(Data_Pos)/3600, " and finish around: ", 
                   as.POSIXlt(T_Begin + Duration*length(Data_Pos), tz = Sys.timezone(location=FALSE)), sep=""))
       ## Update progress bar
       pb <- txtProgressBar(min = 0, max = length(Data_Pos), style = 3)

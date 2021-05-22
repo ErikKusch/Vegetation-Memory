@@ -4,27 +4,14 @@ Fun_Plot <- function(Region, Scaled = FALSE){
   ####--------------- FILE SELECTION ----------------
   Raster <- brick(paste(Dir.Memory, "/", Region, ".nc", sep=""))
   Raster[which(values(Raster[[15]]) > .05)] <- NA
-  Extent <- extent(Raster)
-  Link <- "https://edcintl.cr.usgs.gov/downloads/sciweb1/shared/topo/downloads/GMTED/Grid_ZipFiles/mn30_grd.zip"
-  Dir.GMTED <- file.path(mainDir, "GMTED2010")
-  if (!file.exists(file.path(Dir.GMTED, "GMTED2010.zip"))) {
-    dir.create(Dir.GMTED)
-    print("Downloading GMTED2010 covariate data for background plots.")
-    httr::GET(Link, write_disk(file.path(Dir.GMTED, "GMTED2010.zip")), 
-              progress(), overwrite = TRUE)
-    unzip(file.path(Dir.GMTED, "GMTED2010.zip"), exdir = Dir.GMTED)
-  }
-  Back <- raster(file.path(Dir.GMTED, "mn30_grd/w001001.adf"))
-  Back <- crop(Back, Extent)
-  Back <- resample(x = Back, y = Raster)
+  Back <- raster(paste(Dir.KrigCov, "Co-variates_NativeResolution.nc", sep="/"),
+                 varname = "Elevation")
   Countries <- readOGR(Dir.Mask, "ne_50m_admin_0_countries", verbose = FALSE)
   setwd(Dir.Mask)
   Drylands <- shapefile("dryland_2")
   Raster <- crop(Raster, extent(Drylands))
-  Countries <- crop(Countries, extent(Drylands))
   Back <- crop(Back, extent(Drylands))
-  Back <- mask(Back, Countries)
-  values(Back)[values(Back)<0] <- 0
+  Countries <- crop(Countries, extent(Drylands))
   ####--------------- MISC ---------------- 
   SR_Titles <- list("NDVI[t-1]", "Air Temperature", "Soil Moisture (0-7cm)")
   height <- 11
@@ -142,32 +129,32 @@ Fun_Plot <- function(Region, Scaled = FALSE){
     smaplot <- c(.02, .98, .1, .15)
     for(Plot in c(2,3,4)){
       mainTit <- IndTitles[Plot]
-        if(Plot == 4){ # memory length
-          plot(Countries_AU, axes = FALSE, main = mainTit, col="#f2f2f2", bg="black", lwd=0.25)
-          axis(1, at=seq(from = 80, to = 180, by = 10), 
-               labels = paste(seq(from = 80, to = 180, by = 10), "°"), 
-               tck=.02, col = "white", col.axis = "white", mgp = c(0,-1.4,0), cex.axis = .7)
-          axis(2, at=seq(from = -35, to = -15, by = 5), 
-               labels = paste(seq(from = -35, to = -15, by = 5), "°"), 
-               tck=.02, col = "white", col.axis = "white", mgp = c(0,-1.4,0), cex.axis = .7)
-          plot(AUS_ras[[Plot]], col = col.lags, axes=FALSE, add = TRUE, legend = FALSE)
-          plot(abs(AUS_ras[[Plot]]), legend.only=TRUE, col=col.lags, colNA = "black", 
-               smallplot=smaplot, horizontal = TRUE, axis.args=list(cex.axis=1))
-        }else{ # memory strength
-          plot(Countries_AU, axes = FALSE, main = mainTit, col="#f2f2f2", bg="black", lwd=0.25)
-          axis(1, at=seq(from = 80, to = 180, by = 10), 
-               labels = paste(seq(from = 80, to = 180, by = 10), "°"), 
-               tck=.02, col = "white", col.axis = "white", mgp = c(0,-1.4,0), cex.axis = .7)
-          axis(2, at=seq(from = -35, to = -15, by = 5), 
-               labels = paste(seq(from = -35, to = -15, by = 5), "°"), 
-               tck=.02, col = "white", col.axis = "white", mgp = c(0,-1.4,0), cex.axis = .7)
-          plot(AUS_ras[[Plot]], col=col.sigpos, legend=FALSE, axes=FALSE, add = TRUE)
-          plot(AUS_ras[[Plot]], legend.only=TRUE, col=col.sigpos, colNA = "black", 
-               smallplot=smaplot, horizontal = TRUE, axis.args=list(cex.axis=1))
-        } # memory strength
-      } # memory length
+      if(Plot == 4){ # memory length
+        plot(Countries_AU, axes = FALSE, main = mainTit, col="#f2f2f2", bg="black", lwd=0.25)
+        axis(1, at=seq(from = 80, to = 180, by = 10), 
+             labels = paste(seq(from = 80, to = 180, by = 10), "°"), 
+             tck=.02, col = "white", col.axis = "white", mgp = c(0,-1.4,0), cex.axis = .7)
+        axis(2, at=seq(from = -35, to = -15, by = 5), 
+             labels = paste(seq(from = -35, to = -15, by = 5), "°"), 
+             tck=.02, col = "white", col.axis = "white", mgp = c(0,-1.4,0), cex.axis = .7)
+        plot(AUS_ras[[Plot]], col = col.lags, axes=FALSE, add = TRUE, legend = FALSE)
+        plot(abs(AUS_ras[[Plot]]), legend.only=TRUE, col=col.lags, colNA = "black", 
+             smallplot=smaplot, horizontal = TRUE, axis.args=list(cex.axis=1))
+      }else{ # memory strength
+        plot(Countries_AU, axes = FALSE, main = mainTit, col="#f2f2f2", bg="black", lwd=0.25)
+        axis(1, at=seq(from = 80, to = 180, by = 10), 
+             labels = paste(seq(from = 80, to = 180, by = 10), "°"), 
+             tck=.02, col = "white", col.axis = "white", mgp = c(0,-1.4,0), cex.axis = .7)
+        axis(2, at=seq(from = -35, to = -15, by = 5), 
+             labels = paste(seq(from = -35, to = -15, by = 5), "°"), 
+             tck=.02, col = "white", col.axis = "white", mgp = c(0,-1.4,0), cex.axis = .7)
+        plot(AUS_ras[[Plot]], col=col.sigpos, legend=FALSE, axes=FALSE, add = TRUE)
+        plot(AUS_ras[[Plot]], legend.only=TRUE, col=col.sigpos, colNA = "black", 
+             smallplot=smaplot, horizontal = TRUE, axis.args=list(cex.axis=1))
+      } # memory strength
+    } # memory length
     dev.off()
-    } # plotting loop
+  } # plotting loop
   
   # ##------- VARIANCE PARTITIONING -------
   ## Plotting Setup
@@ -237,21 +224,21 @@ Fun_Plot <- function(Region, Scaled = FALSE){
   # ##------- MAPVIEW -------
   ## EFFECTS
   Raster <- brick(paste(Dir.Memory, "/", Region, ".nc", sep=""))
-    Raster[which(values(Raster[[15]]) > .05)] <- NA
-    col.mapview <- col.sigpos
-    m0_c <- mapview(Countries, color = "black", alpha.regions = 0)
-    # m1_c <- mapview(layer.name = "Model AICs", 
-    #                 abs(Raster[[1]]), legend = TRUE, col.regions = col.sigpos, maxpixels =  5755680, na.color = "#FFFFFF00")
-    m2_c <- mapview(layer.name = "Intrinsic Memory (NDVI [t-1]",
-                    Raster[[2]], legend = TRUE, col.regions = col.mapview, maxpixels =  5755680, na.color = "#FFFFFF00")
-    m3_c <- mapview(layer.name = "Qsoil1 Memory Effects",
-                    Raster[[3]], legend = TRUE, col.regions = col.mapview, maxpixels =  5755680, na.color = "#FFFFFF00")
-    m4_c <- mapview(layer.name = "Qsoil1 Memory Length", at = 0:length(col.lags),
-                    Raster[[4]], legend = TRUE, col.regions = col.lags, maxpixels =  5755680, na.color = "#FFFFFF00")
-    m5_c <- mapview(layer.name = "Tair Memory Effects",
-                    Raster[[5]], legend = TRUE, col.regions = col.mapview, maxpixels =  5755680, na.color = "#FFFFFF00")
-    m6_c <- mapview(layer.name = "Tair Memory Length", at = 0:length(col.lags),
-                    Raster[[6]], legend = TRUE, col.regions = col.lags, maxpixels =  5755680, na.color = "#FFFFFF00")
+  Raster[which(values(Raster[[15]]) > .05)] <- NA
+  col.mapview <- col.sigpos
+  m0_c <- mapview(Countries, color = "black", alpha.regions = 0)
+  # m1_c <- mapview(layer.name = "Model AICs", 
+  #                 abs(Raster[[1]]), legend = TRUE, col.regions = col.sigpos, maxpixels =  5755680, na.color = "#FFFFFF00")
+  m2_c <- mapview(layer.name = "Intrinsic Memory (NDVI [t-1]",
+                  Raster[[2]], legend = TRUE, col.regions = col.mapview, maxpixels =  5755680, na.color = "#FFFFFF00")
+  m3_c <- mapview(layer.name = "Qsoil1 Memory Effects",
+                  Raster[[3]], legend = TRUE, col.regions = col.mapview, maxpixels =  5755680, na.color = "#FFFFFF00")
+  m4_c <- mapview(layer.name = "Qsoil1 Memory Length", at = 0:length(col.lags),
+                  Raster[[4]], legend = TRUE, col.regions = col.lags, maxpixels =  5755680, na.color = "#FFFFFF00")
+  m5_c <- mapview(layer.name = "Tair Memory Effects",
+                  Raster[[5]], legend = TRUE, col.regions = col.mapview, maxpixels =  5755680, na.color = "#FFFFFF00")
+  m6_c <- mapview(layer.name = "Tair Memory Length", at = 0:length(col.lags),
+                  Raster[[6]], legend = TRUE, col.regions = col.lags, maxpixels =  5755680, na.color = "#FFFFFF00")
   # Combine all maps into 1 map
   m_c <- m0_c + m2_c + m3_c + m4_c+ m5_c+ m6_c
   # Plot the map
