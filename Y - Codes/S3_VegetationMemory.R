@@ -249,8 +249,7 @@ VegMem <- function(ClimVar, ClimVar2, Region, Cumlags, FromY, ToY){
   unlink(paste(Dir.Memory, "/", Region, ".txt", sep=""), recursive = TRUE)
   ### Save data ----- 
   setwd(Dir.Memory)
-  write.csv(export_df, file = paste(RegionFiles[[MemReg]], "_Tair_mean-", ModVars[Memrun],
-                                    "_mean", paste(Lags, collapse = "_"), "_", FromY, "-", To, ".csv",
-                                    sep = ""))
+  write.csv(export_df, file = paste(Dir.Memory,"/", Region, "_", ClimVar2, "-", ClimVar, 
+                                        paste(Cumlags, collapse="_"),"_",FromY,"-", ToY, ".csv",sep=""))
   setwd(mainDir)
 }# end of VegMem function 
