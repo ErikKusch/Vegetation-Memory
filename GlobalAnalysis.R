@@ -12,7 +12,7 @@ ClimVars2 = list("Tair_mean", "Tair_mean", "Tair_mean", "Tair_mean")
 ###---------------- FUNCTIONS ---------------------------------------------------------
 ####--------------- GlobalDrylands [numberofCores]
 # (Breaking up global dryland shapefile into bands and enact vegetation memory function) ----
-GlobalDrylands <- function(numberOfCores = 4){
+GlobalDrylands <- function(numberOfCores = 1){
   cl <- makeCluster(numberOfCores) # Assuming X node cluster
   registerDoParallel(cl) # registering cores
   setwd(Dir.Mask)
@@ -164,7 +164,7 @@ GlobalDrylands <- function(numberOfCores = 4){
         for (MemReg in 1:length(Regions)) {
           for (Memrun in 2:length(ModVars)) {
             if (paste(RegionFiles[[MemReg]], "_Tair_mean-", ModVars[Memrun],
-                      "_mean", paste(Lags, collapse = "_"), "_", FromY, "-", To, ".nc",
+                      "_mean", paste(Lags, collapse = "_"), "_", FromY, "-", To, ".csv",
                       sep = "") %nin% list.files(Dir.Memory)) {
               VegMem(ClimVar = paste(ModVars[Memrun], "_mean", sep = ""), ClimVar2 = "Tair_mean",
                      Region = RegionFiles[[MemReg]], Cumlags = Lags, FromY = FromY,
@@ -204,19 +204,6 @@ Fun_Plots <- function(Region, Scaled){
 GlobalDrylands(numberOfCores = detectCores())
 
 ## making a global raster of memory effects
-setwd(Dir.Memory)
-files <- list.files()
-files <- files[grep(files, pattern = "2015.nc")][-1] # not using Drylands_1 because of data errors
-ls <- list()# loading data
-for(i in 1:length(files)){
-  ls[[i]] <- brick(files[i])
-}
-Big_ras <- ls[[1]] # merging data
-for(i in 2:length(ls)){
-  Big_ras <- merge(Big_ras, ls[[i]])
-}
-writeRaster(Big_ras, "GlobalDrylands.nc", format="CDF") # saving data
-rm(ls)
-rm(Big_ras)
+# rbind data frames
 
 Fun_Plots(Region = "GlobalDrylands", Scaled = TRUE)
