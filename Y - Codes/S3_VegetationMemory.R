@@ -49,7 +49,7 @@ VegMem <- function(ClimVar, ClimVar2, Region, Cumlags, FromY, ToY){
   # MODELS----
   ## sampling of random cells so as to not run all models
   set.seed(42)
-  if(length(Data_Pos < 1e4)){Rn <- 1e3}else{Rn <- 1e4}
+  if(length(Data_Pos) < 1e4){Rn <- 5e2}else{Rn <- 5e3}
   Data_Pos <- sample(Data_Pos, Rn)
   ## run models
   Counter = 1 # for indexing rows in export_df

@@ -201,7 +201,7 @@ Fun_Plots <- function(Region, Scaled){
 } # Fun_Plots
 
 ####--------------- FUNCTION CALLS ----
-GlobalDrylands(numberOfCores = detectCores())
+GlobalDrylands(numberOfCores = detectCores()/2)
 
 ## making a global raster of memory effects
 # rbind data frames
