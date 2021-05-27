@@ -190,20 +190,34 @@ GlobalDrylands <- function(numberOfCores = 1){
   stopCluster(cl)
 }
 
-####--------------- Fun_Plots [Variables, Regions, RegionFiles, Legends, SoilLayers]
-# (selecting and preparing data, and making COMPADRE data into rasters) ----
-Fun_Plots <- function(Region, Scaled){
-  print("++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++")
-  print("PRODUCING PLOTS OF VEGETATION MEMORY")
-  print("++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++")
-  source(paste(Dir.Codes, "SX_Plots.R", sep="/"))
-  Fun_Plot(Region = Region, Scaled = Scaled)
-} # Fun_Plots
-
 ####--------------- FUNCTION CALLS ----
 GlobalDrylands(numberOfCores = detectCores()/2)
 
 ## making a global raster of memory effects
+csv_ls <- list.files(Dir.Memory, pattern = "2015.csv")
 # rbind data frames
+setwd(Dir.Memory)
+GlobalCSV <- read.csv(csv_ls[1])
+GlobalCSV$Region <- 1
+for(i in 2:length(csv_ls)){
+  IterCSV <- read.csv(csv_ls[i])
+  IterCSV$Region <- i
+  GlobalCSV <- rbind(GlobalCSV, IterCSV)
+}
+colnames(GlobalCSV) <- c("X", "AIC", "NDVI", "Qsoil1", "Lag.Qsoil", "Tair", "Lag.Tair", "V_Total", colnames(GlobalCSV)[9:19])
+write.csv(GlobalCSV, file = "GlobalDrylands.csv")
+setwd(mainDir)
 
-Fun_Plots(Region = "GlobalDrylands", Scaled = TRUE)
+####--------------- Fun_Plots [Variables, Regions, RegionFiles, Legends, SoilLayers]
+# (selecting and preparing data, and making COMPADRE data into rasters) ----
+print("++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++")
+print("PRODUCING PLOTS OF VEGETATION MEMORY")
+print("++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++")
+source(paste("Y - Codes", "SX_Plots.R", sep="/"))
+Fun_Plot(Region = "GlobalDrylands", Parameter = "NDVI")
+Fun_Plot(Region = "GlobalDrylands", Parameter = "Qsoil1")
+Fun_Plot(Region = "GlobalDrylands", Parameter = "Lag.Qsoil")
+Fun_Plot(Region = "GlobalDrylands", Parameter = "Tair")
+Fun_Plot(Region = "GlobalDrylands", Parameter = "Lag.Tair")
+Fun_Plot(Region = "GlobalDrylands", Parameter = "Memory")
+Fun_Plot(Region = "GlobalDrylands", Parameter = "Variances")
