@@ -45,7 +45,8 @@ RegionSelection <- function(Region, RegionFile, Extent) {
 ### Fun_NamesRas [raster, ClimVar, ClimVar2]
 # (assigning layer names to model rasters) ----
 Fun_NamesRas <- function(raster, ClimVar, ClimVar2, rasiter = 1){
-  names(raster) <- c("Model AICs", 
+  names(raster) <- c("Adjusted R2",
+                     "Model AICs", 
                      "Antecedent NDVI (c_NDVI)",
                      paste("Antecedent" , ClimVar[[rasiter]], "(c_clim)", sep=" "),
                      paste("Most informative", ClimVar[[rasiter]],"lag", sep=" "),

@@ -36,7 +36,7 @@ VegMem <- function(ClimVar, ClimVar2, Region, Cumlags, FromY, ToY){
   NATest_vec <- values(NATest_ras) # set values as vector
   Data_Pos <- which(!is.na(NATest_vec)) # select non-NA positions (these are the ones we should build models on)
   # PREPARE RASTERS----
-  ModelEval_ras <- NDVI_ras[[1:15]] # select 15 raster layers
+  ModelEval_ras <- NDVI_ras[[1:16]] # select 15 raster layers
   # put names on the layers to tell us what they contain later
   ModelEval_ras <- Fun_NamesRas(raster = ModelEval_ras, ClimVar = ClimVar, ClimVar2 = ClimVar2)
   sink(file = paste(Dir.Memory, "/", Region, ".txt", sep=""))
@@ -128,7 +128,7 @@ VegMem <- function(ClimVar, ClimVar2, Region, Cumlags, FromY, ToY){
       ModData_df$NDVI_anom[ThreshPos] <- NA}
     ModData_df <- na.omit(ModData_df) # get rid of NA rows
     if(dim(ModData_df)[1] == 0){ # if there are no anomalies
-      ModelEval_ras[pixel] <- c(NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA)
+      ModelEval_ras[pixel] <- c(NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA)
       next()
     }
     AICs_df <- data.frame(matrix(rep(NA, length(Cumlags)*length(Cumlags)), nrow = length(Cumlags)))
@@ -214,7 +214,7 @@ VegMem <- function(ClimVar, ClimVar2, Region, Cumlags, FromY, ToY){
     # with(ModData_df, varpart(Y = ModData_df, X = NDVI_anom ~ NDVI_Lag1, ~ModData_df[, PCABest[1]+4], ~ModData_df[, PCABest[2]+6+length(Cumlags)], data = ModData_df))
     
     ## WRITING INFORMATION TO RASTERS----
-    ModelEval_ras[pixel] <- as.numeric(c(AIC(Mod), c_NDVI, c_Clim, PCABest[1]-1, c_Clim2, PCABest[2]-1, 
+    ModelEval_ras[pixel] <- as.numeric(c(summary(Mod)[["adj.r.squared"]], AIC(Mod), c_NDVI, c_Clim, PCABest[1]-1, c_Clim2, PCABest[2]-1, 
                                          Vars, ps)) # saving model information to raster
     ## Updating progress bar----
     if(exists("pb") == FALSE){ # if we are currently on the first pixel
