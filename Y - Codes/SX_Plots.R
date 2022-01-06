@@ -1,6 +1,31 @@
 ################################################################################
 ####--------------- Fun_Plot [Region, Scaled] # all things vegetation memory (maps, varpar, system dynamics)
 Fun_Plot <- function(Region, Scaled = FALSE){
+  ####--------------- ECOREGIONS ----------------
+  if(!file.exists(file.path(Dir.Mask, "WWF_ecoregions"))){
+    download.file("http://assets.worldwildlife.org/publications/15/files/original/official_teow.zip", destfile = file.path(Dir.Mask, "wwf_ecoregions.zip"))
+    unzip(file.path(Dir.Mask, "wwf_ecoregions.zip"), exdir = file.path(Dir.Mask, "WWF_ecoregions"))
+  }
+  EcoregionsMask <- readOGR(file.path(Dir.Mask, "WWF_ecoregions", "official", "wwf_terr_ecos.shp"), verbose = FALSE) # loading shapefile for wwf ecoregions
+  ### vectors for WWF region naming
+  Abbr_Biomes <- c(1:14, 99, 98)
+  Full_Biomes <- c("Tropical & Subtropical Moist Broadleaf Forests",
+                   "Tropical & Subtropical Dry Broadleaf Forests",
+                   "Tropical & Subtropical Coniferous Forests",
+                   "Temperate Broadleaf & Mixed Forests",
+                   "Temperate Conifer Forests",
+                   "Boreal Forests/Taiga",
+                   "Tropical & Subtropical Grasslands, Savannas & Shrublands",
+                   "Temperate Grasslands, Savannas & Shrublands",
+                   "Flooded Grasslands & Savannas",
+                   "Montane Grasslands & Shrublands",
+                   "Tundra",
+                   "Mediterranean Forests, Woodlands & Scrub",
+                   "Deserts & Xeric Shrublands",
+                   "Mangroves",
+                   "Snow-Covered/Barren",
+                   "Limnic Bodies of Water")
+  
   ####--------------- FILE SELECTION ----------------
   Raster <- brick(paste(Dir.Memory, "/", Region, ".nc", sep=""))
   Raster[which(values(Raster[[15]]) > .05)] <- NA
@@ -12,6 +37,63 @@ Fun_Plot <- function(Region, Scaled = FALSE){
   Raster <- crop(Raster, extent(Drylands))
   Back <- crop(Back, extent(Drylands))
   Countries <- crop(Countries, extent(Drylands))
+  setwd(mainDir)
+  
+  ####--------------- REVISION BLOCK ----------------
+  Ecoregions_ras <- rasterize(EcoregionsMask, Raster, field = "BIOME")
+  Gimms_ras <- stack(file.path(Dir.Gimms.Monthly, list.files(Dir.Gimms.Monthly, "GlobalNDVI")))
+  Gimms_ras <- mean(Gimms_ras)
+  Gimms_ras <- crop(Gimms_ras, extent(Raster))
+  Analyses_ras <- stack(Raster, Gimms_ras, Ecoregions_ras)
+  Analyses_df <- na.omit(as.data.frame(Analyses_ras))
+  Analyses_df <- Analyses_df[Analyses_df$Biome != 99 & Analyses_df$Biome != 98, ]
+  Analyses_df$Biome <- Full_Biomes[match(Analyses_df$Biome, Abbr_Biomes)]
+  colnames(Analyses_df) <- c("AIC", "t1 (Effect)", "Qsoil1 (Effect)", "Qsoil1 (Lag)", "Tair (Effect)", "Tair (Lag)", "Total_Var", "V_NDVI", "V_C1", "V_C2", "V_C1.2", "V_C1.3", "V_C2.3", "V_Shared", "Model.p.value", "MeanNDVI", "Biome")
+  saveRDS(Analyses_df, file.path(Dir.Memory, "Analyses_df.rds"))
+  ## similarity of effect patterns
+  ggplot(Analyses_df[1:1e3,], aes(x = `t1 (Effect)`, y = `Qsoil1 (Effect)`)) + 
+    geom_point(alpha = 0.2) + stat_smooth(method = "lm") + theme_bw()
+  ggsave(filename=file.path(Dir.Plots, "SimPatterns.png"))
+  ggplot(Analyses_df[1:1e3,], aes(x = `t1 (Effect)`, y = `Tair (Effect)`)) + 
+    geom_point(alpha = 0.2) + stat_smooth(method = "lm") + theme_bw()
+  ggsave(filename=file.path(Dir.Plots, "SimPatterns2.png"))
+  
+  ## memory characteristics by mean ndvi and biome
+  Plot_df <- Analyses_df[ , c("t1 (Effect)", "Total_Var", "Qsoil1 (Effect)", "Qsoil1 (Lag)", "Tair (Effect)", "Tair (Lag)", "MeanNDVI", "Biome")]
+  Plot_df <- reshape(Plot_df, direction = "long", 
+                     varying = list(names(Plot_df)[1:6]), times = names(Plot_df)[1:6],
+                     v.names = c("Value"), idvar = c("MeanNDVI", "Biome"),
+                     new.row.names = 1:(nrow(Analyses_df)*6)
+  )
+  
+  Facetplot <- ggplot(Plot_df[Plot_df$time !=  "Qsoil1 (Lag)" & Plot_df$time !=  "Tair (Lag)" , ], aes(x = MeanNDVI, y = Value, col = Biome)) + 
+    geom_point(alpha = 0.2) + stat_smooth(method = "lm") + 
+    facet_wrap(~ time, scales = "free_y") +
+    theme_bw()
+  ggsave(Facetplot, filename = file.path(Dir.Plots, "Facetplot.png"), width = 16, height = 9)  
+  Boxplot <- ggplot(Plot_df, aes(x = Biome, y = Value, col = Biome)) + 
+    geom_boxplot() +
+    facet_wrap(~ time, scales = "free_y", ncol = 2) +
+    theme_bw()
+  ggsave(Boxplot, filename = file.path(Dir.Plots, "Boxplot.png"), width = 16, height = 16)
+  
+  ## woodland vs grassland
+  WoodGrass <- grepl(pattern = "Forest", x = Plot_df$Biome, fixed = TRUE) | grepl(pattern = "Shrub", x = Plot_df$Biome, fixed = TRUE)
+  Plot_df <- Plot_df[WoodGrass,]
+  Plot_df$Biome[grepl(pattern = "Forest", x = Plot_df$Biome, fixed = TRUE)] <- "Forest"
+  Plot_df$Biome[grepl(pattern = "Shrub", x = Plot_df$Biome, fixed = TRUE)] <- "Grassland"
+  
+  Facetplot <- ggplot(Plot_df[Plot_df$time !=  "Qsoil1 (Lag)" & Plot_df$time !=  "Tair (Lag)" , ], aes(x = MeanNDVI, y = Value, col = Biome)) + 
+    geom_point(alpha = 0.2) + stat_smooth(method = "lm") + 
+    facet_wrap(~ time, scales = "free_y") +
+    theme_bw()
+  ggsave(Facetplot, filename = file.path(Dir.Plots, "Facetplot2.png"), width = 16, height = 9)  
+  Boxplot <- ggplot(Plot_df, aes(x = Biome, y = Value, col = Biome)) + 
+    geom_boxplot() +
+    facet_wrap(~ time, scales = "free_y", ncol = 2) +
+    theme_bw()
+  ggsave(Boxplot, filename = file.path(Dir.Plots, "Boxplot2.png"), width = 16, height = 16)
+  
   ####--------------- MISC ---------------- 
   SR_Titles <- list("NDVI[t-1]", "Air Temperature", "Soil Moisture (0-7cm)")
   height <- 11
@@ -181,7 +263,9 @@ Fun_Plot <- function(Region, Scaled = FALSE){
     plot_df <- rbind(plot_df, plot_df1)
   }
   plot_df <- na.omit(plot_df)
-  P_Box <- ggplot(data = plot_df, aes(y = Data, x = Variance, fill = Variance)) + geom_boxplot() + theme_bw(base_size= 25) + xlab("Variable Components") + ylab("Proportion Variance Explained") +
+  P_Box <- ggplot(data = plot_df, aes(y = Data, x = Variance, fill = Variance)) + 
+    geom_boxplot() + 
+    theme_bw(base_size= 25) + xlab("Variable Components") + ylab("Proportion Variance Explained") +
     scale_fill_manual(values=c(col.list[[1]], col.list[[2]], col.list[[3]], col.list[[4]],
                                col.list[[5]], col.list[[6]], col.list[[7]])) +
     theme(axis.text.x = element_text(size=20, angle=-30)) + theme(legend.position = "none")
