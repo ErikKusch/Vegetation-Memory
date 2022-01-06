@@ -48,18 +48,18 @@ Fun_Plot <- function(Region, Scaled = FALSE){
   Analyses_df <- na.omit(as.data.frame(Analyses_ras))
   Analyses_df <- Analyses_df[Analyses_df$Biome != 99 & Analyses_df$Biome != 98, ]
   Analyses_df$Biome <- Full_Biomes[match(Analyses_df$Biome, Abbr_Biomes)]
-  colnames(Analyses_df) <- c("AIC", "t1 (Effect)", "Qsoil1 (Effect)", "Qsoil1 (Lag)", "Tair (Effect)", "Tair (Lag)", "Total_Var", "V_NDVI", "V_C1", "V_C2", "V_C1.2", "V_C1.3", "V_C2.3", "V_Shared", "Model.p.value", "MeanNDVI", "Biome")
+  colnames(Analyses_df) <- c("AIC", "NDVI[t-1] (Effect)", "Qsoil1 (Effect)", "Qsoil1 (Lag)", "Tair (Effect)", "Tair (Lag)", "Total_Var", "V_NDVI", "V_C1", "V_C2", "V_C1.2", "V_C1.3", "V_C2.3", "V_Shared", "Model.p.value", "MeanNDVI", "Biome")
   saveRDS(Analyses_df, file.path(Dir.Memory, "Analyses_df.rds"))
   ## similarity of effect patterns
-  ggplot(Analyses_df[1:1e3,], aes(x = `t1 (Effect)`, y = `Qsoil1 (Effect)`)) + 
+  ggplot(Analyses_df[1:1e3,], aes(x = `NDVI[t-1] (Effect)`, y = `Qsoil1 (Effect)`)) + 
     geom_point(alpha = 0.2) + stat_smooth(method = "lm") + theme_bw()
   ggsave(filename=file.path(Dir.Plots, "SimPatterns.png"))
-  ggplot(Analyses_df[1:1e3,], aes(x = `t1 (Effect)`, y = `Tair (Effect)`)) + 
+  ggplot(Analyses_df[1:1e3,], aes(x = `NDVI[t-1] (Effect)`, y = `Tair (Effect)`)) + 
     geom_point(alpha = 0.2) + stat_smooth(method = "lm") + theme_bw()
   ggsave(filename=file.path(Dir.Plots, "SimPatterns2.png"))
   
   ## memory characteristics by mean ndvi and biome
-  Plot_df <- Analyses_df[ , c("t1 (Effect)", "Total_Var", "Qsoil1 (Effect)", "Qsoil1 (Lag)", "Tair (Effect)", "Tair (Lag)", "MeanNDVI", "Biome")]
+  Plot_df <- Analyses_df[ , c("NDVI[t-1] (Effect)", "Total_Var", "Qsoil1 (Effect)", "Qsoil1 (Lag)", "Tair (Effect)", "Tair (Lag)", "MeanNDVI", "Biome")]
   Plot_df <- reshape(Plot_df, direction = "long", 
                      varying = list(names(Plot_df)[1:6]), times = names(Plot_df)[1:6],
                      v.names = c("Value"), idvar = c("MeanNDVI", "Biome"),
@@ -88,7 +88,7 @@ Fun_Plot <- function(Region, Scaled = FALSE){
     facet_wrap(~ time, scales = "free_y") +
     theme_bw()
   ggsave(Facetplot, filename = file.path(Dir.Plots, "Facetplot2.png"), width = 16, height = 9)  
-  Boxplot <- ggplot(Plot_df, aes(x = Biome, y = Value, col = Biome)) + 
+  Boxplot <- ggplot(Plot_df, aes(x = Biome, y = Value)) + 
     geom_boxplot() +
     facet_wrap(~ time, scales = "free_y", ncol = 2) +
     theme_bw()
