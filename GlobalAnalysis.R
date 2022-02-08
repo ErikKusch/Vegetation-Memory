@@ -201,7 +201,8 @@ Fun_Plots <- function(Region, Scaled){
 } # Fun_Plots
 
 ####--------------- FUNCTION CALLS ----
-GlobalDrylands(numberOfCores = detectCores())
+NCores <- ifelse(detectCores()<13, detectCores(), 13)
+GlobalDrylands(numberOfCores = NCores)
 
 ## making a global raster of memory effects
 setwd(Dir.Memory)
@@ -219,4 +220,4 @@ writeRaster(Big_ras, "GlobalDrylands.nc", format="CDF") # saving data
 rm(ls)
 rm(Big_ras)
 
-Fun_Plots(Region = "GlobalDrylands", Scaled = TRUE)
+Fun_Plots(Region = "GlobalDrylands", Scaled = FALSE)
