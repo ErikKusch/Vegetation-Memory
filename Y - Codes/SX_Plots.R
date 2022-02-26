@@ -48,11 +48,7 @@ Fun_Plot <- function(Region, Scaled = FALSE){
   AUS_shp <- Countries[which(Countries$NAME_SORT == "Australia"),]
   Analyses_ras <- crop(Analyses_ras, extent(c(extent(AUS_shp)[1], extent(AUS_shp)[2], -40, -12)))
   Analyses_df <- na.omit(as.data.frame(Analyses_ras))
-<<<<<<< HEAD
   colnames(Analyses_df) <- c("R2" ,"AIC", "NDVI[t-1] (Effect)", "Qsoil1 (Effect)", "Qsoil1 (Lag)", "Tair (Effect)", "Tair (Lag)", "Total_Var", "V_NDVI", "V_C1", "V_C2", "V_C1.2", "V_C1.3", "V_C2.3", "V_Shared", "Model.p.value", "MeanNDVI", "Biome")
-=======
-  colnames(Analyses_df) <- c("AIC", "NDVI[t-1] (Effect)", "Qsoil1 (Effect)", "Qsoil1 (Lag)", "Tair (Effect)", "Tair (Lag)", "Total_Var", "V_NDVI", "V_C1", "V_C2", "V_C1.2", "V_C1.3", "V_C2.3", "V_Shared", "Model.p.value", "MeanNDVI", "Biome")
->>>>>>> b353cddec0209fd4b11a6c0ab3831372bfe9a197
   Analyses_df <- Analyses_df[Analyses_df$Biome != 99 & Analyses_df$Biome != 98, ]
   Analyses_df$Biome <- Full_Biomes[match(Analyses_df$Biome, Abbr_Biomes)]
   saveRDS(Analyses_df, file.path(Dir.Memory, "Analyses_df.rds"))
@@ -65,11 +61,7 @@ Fun_Plot <- function(Region, Scaled = FALSE){
   ggsave(filename=file.path(Dir.Plots, "SimPatterns2.png"))
   
   ## memory characteristics by mean ndvi and biome
-<<<<<<< HEAD
   Plot_df <- Analyses_df[ , c("R2", "NDVI[t-1] (Effect)", "Total_Var", "Qsoil1 (Effect)", "Qsoil1 (Lag)", "Tair (Effect)", "Tair (Lag)", "MeanNDVI", "Biome")]
-=======
-  Plot_df <- Analyses_df[ , c("NDVI[t-1] (Effect)", "Total_Var", "Qsoil1 (Effect)", "Qsoil1 (Lag)", "Tair (Effect)", "Tair (Lag)", "MeanNDVI", "Biome")]
->>>>>>> b353cddec0209fd4b11a6c0ab3831372bfe9a197
   Plot_df <- reshape(Plot_df, direction = "long", 
                      varying = list(names(Plot_df)[1:6]), times = names(Plot_df)[1:6],
                      v.names = c("Value"), idvar = c("MeanNDVI", "Biome"),
@@ -99,7 +91,6 @@ Fun_Plot <- function(Region, Scaled = FALSE){
     theme_bw()
   ggsave(Facetplot, filename = file.path(Dir.Plots, "Facetplot2.png"), width = 16, height = 9)  
   
-<<<<<<< HEAD
   Boxplot <- ggplot(Plot_df[Plot_df$time ==  "Qsoil1 (Lag)", ], aes(x = Value)) + 
     geom_histogram(bins = 13, col = "black", fill = "lightgrey") +
     # geom_density() + 
@@ -108,14 +99,6 @@ Fun_Plot <- function(Region, Scaled = FALSE){
     theme_bw()
   Boxplot
   ggsave(Boxplot, filename = file.path(Dir.Plots, "Boxplot2.png"), width = 8, height = 4.5)
-=======
-  Boxplot <- ggplot(Plot_df[Plot_df$time ==  "Qsoil1 (Lag)" | Plot_df$time ==  "Tair (Lag)", ], aes(x = Value, col = Biome)) + 
-    # geom_histogram(bins = 13) +
-    geom_density() + 
-    facet_wrap(~ time, scales = "free_x", ncol = 2) +
-    theme_bw()
-  ggsave(Boxplot, filename = file.path(Dir.Plots, "Boxplot2.png"), width = 16, height = 9)
->>>>>>> b353cddec0209fd4b11a6c0ab3831372bfe9a197
   
   ####--------------- MISC ---------------- 
   SR_Titles <- list("NDVI[t-1]", "Air Temperature", "Soil Moisture (0-7cm)")
@@ -161,28 +144,18 @@ Fun_Plot <- function(Region, Scaled = FALSE){
   ggsave(file=paste(Dir.Plots, "/", Region, "_RelImportance.jpeg", sep = ""), width = width, height = height, units = "cm", quality = 100)
   
   ##------- MODEL COEFFICIENTS -------
-<<<<<<< HEAD
   plot_ras <- Raster[[c(1, 3:7)]]
   ### COEFFICIENTS
   IndTitles <- c(
     "Adjusted R2",
-=======
-  plot_ras <- Raster[[c(2:6)]]
-  ### COEFFICIENTS
-  IndTitles <- c(
     # "Model AICs",
->>>>>>> b353cddec0209fd4b11a6c0ab3831372bfe9a197
     paste(SR_Titles[1], "(Intrinsic Memory)"),
-    paste(SR_Titles[3], "(Inverse Resistance)"),
+    paste(SR_Titles[3], "(Memory Strength)"),
     paste(SR_Titles[3], "(Memory Length)"),
-    paste(SR_Titles[2], "(Inverse Resistance)"),
+    paste(SR_Titles[2], "(Memory Strength)"),
     paste(SR_Titles[2], "(Memory Length)"))
-  SaveTitels <- c(
-<<<<<<< HEAD
-    "R2",
-=======
+  SaveTitels <- c("R2",
     # "AIC", 
->>>>>>> b353cddec0209fd4b11a6c0ab3831372bfe9a197
     "S_NDVI", "S_Qsoil1", "L_Qsoil1", "S_Tair", "L_Tair")
   
   # if(Scaled == TRUE){
@@ -193,7 +166,7 @@ Fun_Plot <- function(Region, Scaled = FALSE){
   
   height <- 16
   width <- 32
-<<<<<<< HEAD
+
   for(Plot in c(1:6)){
     mainTit <- IndTitles[Plot]
     if(Scaled == FALSE){
@@ -224,38 +197,6 @@ Fun_Plot <- function(Region, Scaled = FALSE){
       plot(plot_ras[[Plot]], col = col.lags, axes=FALSE, add = TRUE, legend = FALSE)
       plot(abs(plot_ras[[Plot]]), legend.only=TRUE, col=col.lags, colNA = "black", 
            smallplot=smaplot, horizontal = TRUE, axis.args=list(cex.axis=1))
-=======
-  for(Plot in c(1:5)){
-    mainTit <- IndTitles[Plot]
-    # if(Scaled == FALSE){
-    jpeg(file=paste(Dir.Plots, "/", Region, "_", SaveTitels[Plot],".jpeg", sep = ""), 
-         width = width, height = height, units = "cm", quality = 100, res = 1000)
-    smaplot <- c(.13, .935, .13, .16)
-    # }
-    # if(Plot == 1){
-    #   plot(Countries, axes = FALSE, main = "Model AICs", col="#f2f2f2", bg="black", lwd=0.25)
-    #   axis(1, at=seq(from = -180, to = 180, by = 20), 
-    #        labels = paste(seq(from = -180, to = 180, by = 20), "°"), 
-    #        tck=.02, col = "white", col.axis = "white", mgp = c(0,-1.4,0), cex.axis = .7)
-    #   axis(2, at=seq(from = -50, to = 60, by = 10), 
-    #        labels = paste(seq(from = -50, to = 60, by = 10), "°"), 
-    #        tck=.02, col = "white", col.axis = "white", mgp = c(0,-1.4,0), cex.axis = .7)
-    #   plot(abs(plot_ras[[1]]), col=col.sigposa, legend=FALSE, axes=FALSE, add = TRUE)
-    #   plot(abs(plot_ras[[1]]), legend.only=TRUE, col=col.sigposa, colNA = "black", 
-    #        smallplot=smaplot, horizontal = TRUE, axis.args=list(cex.axis=1))
-    # }else{
-    if(Plot == 3 | Plot == 5){ # memory length
-      plot(Countries, axes = FALSE, main = mainTit, col="#f2f2f2", bg="black", lwd=0.25)
-      axis(1, at=seq(from = -160, to = 160, by = 20), 
-           labels = paste(seq(from = -160, to = 160, by = 20), "°"), 
-           tck=.02, col = "white", col.axis = "white", mgp = c(0,-2,0), cex.axis = .7, las = 1)
-      axis(2, at=seq(from = -40, to = 40, by = 10), 
-           labels = paste(seq(from = -40, to = 40, by = 10), "°"), 
-           tck=.02, col = "white", col.axis = "white", mgp = c(0,-2,0), cex.axis = .7, las = 1)
-      plot(plot_ras[[Plot]], col = col.lags, axes=FALSE, add = TRUE, legend = FALSE)
-      plot(abs(plot_ras[[Plot]]), legend.only=TRUE, col=col.lags, colNA = "black", 
-           smallplot=smaplot, horizontal = TRUE, axis.args=list(cex.axis=1))
->>>>>>> b353cddec0209fd4b11a6c0ab3831372bfe9a197
     }else{ # memory strength
       plot(Countries, axes = FALSE, main = mainTit, col="#f2f2f2", bg="black", lwd=0.25)
       axis(1, at=seq(from = -160, to = 160, by = 20), 
@@ -268,23 +209,16 @@ Fun_Plot <- function(Region, Scaled = FALSE){
       plot(plot_ras[[Plot]], legend.only=TRUE, col=col.sigpos, colNA = "black", 
            smallplot=smaplot, horizontal = TRUE, axis.args=list(cex.axis=1))
     } # memory strength
-<<<<<<< HEAD
     } # memory length
     if(Scaled == FALSE){
     dev.off()
     }
-=======
-    # } # memory length
-    # if(Scaled == FALSE){
-    dev.off()
-    # }
->>>>>>> b353cddec0209fd4b11a6c0ab3831372bfe9a197
   } # plotting loop
   # if(Scaled == TRUE){dev.off()}
   
   height <- 11
   width <- 16
-  if(Scaled == TRUE){
+  # if(Scaled == TRUE){
     AUS_shp <- Countries[which(Countries$NAME_SORT == "Australia"),]
     AUS_ras <- crop(plot_ras, extent(c(extent(AUS_shp)[1], extent(AUS_shp)[2], -40, -12)))
     Countries_AU <- crop(Countries, extent(c(extent(AUS_shp)[1], extent(AUS_shp)[2], -40, -12)))
@@ -318,7 +252,7 @@ Fun_Plot <- function(Region, Scaled = FALSE){
       } # memory strength
     } # memory length
     dev.off()
-  } # plotting loop
+  # } # plotting loop
   
   # ##------- VARIANCE PARTITIONING -------
   ## Plotting Setup
