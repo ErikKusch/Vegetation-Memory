@@ -225,9 +225,9 @@ Fun_Plot <- function(Region, Scaled = FALSE){
     jpeg(file=paste(Dir.Plots, "/", Region, "_SCALEDAUS.jpeg", sep = ""), width = width*1.5, height = height, units = "cm", quality = 100, res = 1000)
     par(mfrow = c(1,3), mai = c(.7, 0, 0.2, 0))
     smaplot <- c(.02, .98, .1, .15)
-    for(Plot in c(1,2,3)){
+    for(Plot in c(2,3,4)){
       mainTit <- IndTitles[Plot]
-      if(Plot == 3){ # memory length
+      if(Plot == 4){ # memory length
         plot(Countries_AU, axes = FALSE, main = mainTit, col="#f2f2f2", bg="black", lwd=0.25)
         axis(1, at=seq(from = 80, to = 180, by = 10), 
              labels = paste(seq(from = 80, to = 180, by = 10), "°"), 
